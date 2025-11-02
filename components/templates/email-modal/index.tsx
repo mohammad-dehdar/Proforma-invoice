@@ -44,7 +44,7 @@ export const EmailModal = ({
       alert(`✅ فاکتور با موفقیت به ${email} ارسال شد!`);
       setEmail('');
       onClose();
-    } catch (err) {
+    } catch {
       setError('خطا در ارسال ایمیل. لطفاً دوباره تلاش کنید.');
     } finally {
       setSending(false);
