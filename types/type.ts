@@ -16,6 +16,7 @@ export type PaymentInfo = {
   cardNumber: string;
   cardHolderName: string;
   bankName?: string;
+  iban?: string; // ✅ فیلد شماره شبا اضافه شد
 };
 
 export type Invoice = {
@@ -24,7 +25,31 @@ export type Invoice = {
   customer: Customer;
   services: Service[];
   paymentInfo: PaymentInfo;
-  discount?: number; // ✅ جدید
-  tax?: number; // ✅ جدید
-  notes?: string; // ✅ جدید
+  discount?: number;
+  tax?: number;
+  notes?: string;
 };
+
+// تایپ‌های validation
+export type ValidationError = {
+  field: string;
+  message: string;
+};
+
+export type ValidationResult = {
+  isValid: boolean;
+  errors: ValidationError[];
+};
+
+// تایپ‌های کارت بانکی
+export type CompanyCard = {
+  id: number;
+  cardNumber: string;
+  cardHolderName: string;
+  bankName: string;
+  iban: string; // ✅ فیلد شماره شبا اضافه شد
+  isDefault: boolean;
+};
+
+// تایپ‌های نمایش
+export type View = 'invoice' | 'dashboard' | 'history';

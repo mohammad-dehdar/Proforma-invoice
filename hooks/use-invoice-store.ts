@@ -30,8 +30,7 @@ const createDefaultInvoice = (): Invoice => {
     paymentInfo: {
       cardNumber: defaultCard.cardNumber,
       cardHolderName: defaultCard.cardHolderName,
-      bankName: defaultCard.bankName,
-      iban: defaultCard.iban // ✅ شماره شبا اضافه شد
+      bankName: defaultCard.bankName
     },
     discount: 0,
     tax: 9,

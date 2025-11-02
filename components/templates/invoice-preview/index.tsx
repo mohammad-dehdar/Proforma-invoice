@@ -173,6 +173,12 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
                                             <p className="text-slate-900 font-semibold">{invoice.paymentInfo.bankName}</p>
                                         </div>
                                     )}
+                                    {invoice.paymentInfo.iban && (
+                                        <div>
+                                            <p className="text-slate-500 text-xs mb-1 font-medium">شماره شبا</p>
+                                            <p className="text-slate-900 font-semibold">{invoice.paymentInfo.iban}</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
