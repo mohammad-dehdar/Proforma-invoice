@@ -61,51 +61,51 @@ export default function InvoicePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Navigation Header */}
         {!showPreview && (
-          <div className="bg-gray-800 rounded-lg shadow-2xl p-4 mb-6">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <h1 className="text-2xl font-bold text-blue-400">
+          <div className="bg-gray-800 rounded-lg shadow-2xl p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-blue-400 text-center sm:text-right w-full sm:w-auto">
                 ETMIFY - سیستم پیش‌فاکتور
               </h1>
-              <div className="flex gap-3 flex-wrap justify-center">
+              <div className="flex flex-wrap gap-2 sm:gap-3 justify-center sm:justify-end w-full sm:w-auto">
                 <button
                   onClick={() => setCurrentView('invoice')}
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                  className={`text-xs sm:text-sm md:text-base px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all flex-1 sm:flex-none min-w-[100px] sm:min-w-0 ${
                     currentView === 'invoice'
                       ? 'bg-blue-600 text-white shadow-lg'
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
                   type="button"
                 >
-                  <FileText size={18} />
-                  فاکتور جدید
+                  <FileText size={14} className="sm:w-4 sm:h-4" />
+                  <span className="whitespace-nowrap">فاکتور جدید</span>
                 </button>
                 <button
                   onClick={() => setCurrentView('dashboard')}
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                  className={`text-xs sm:text-sm md:text-base px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all flex-1 sm:flex-none min-w-[100px] sm:min-w-0 ${
                     currentView === 'dashboard'
                       ? 'bg-blue-600 text-white shadow-lg'
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
                   type="button"
                 >
-                  <Home size={18} />
-                  داشبورد
+                  <Home size={14} className="sm:w-4 sm:h-4" />
+                  <span className="whitespace-nowrap">داشبورد</span>
                 </button>
                 <button
                   onClick={() => setCurrentView('history')}
-                  className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                  className={`text-xs sm:text-sm md:text-base px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all flex-1 sm:flex-none min-w-[100px] sm:min-w-0 ${
                     currentView === 'history'
                       ? 'bg-blue-600 text-white shadow-lg'
                       : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                   }`}
                   type="button"
                 >
-                  <History size={18} />
-                  تاریخچه
+                  <History size={14} className="sm:w-4 sm:h-4" />
+                  <span className="whitespace-nowrap">تاریخچه</span>
                 </button>
               </div>
             </div>

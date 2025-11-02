@@ -64,19 +64,19 @@ export const InvoiceForm = () => {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg shadow-2xl p-6 mb-6">
-      <h1 className="text-3xl font-bold text-blue-400 mb-6 text-center">
-        سیستم صدور پیش‌فاکتور - ETMIFY
+    <div className="bg-gray-800 rounded-lg shadow-2xl p-4 sm:p-6 mb-4 sm:mb-6">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-blue-400 mb-4 sm:mb-6 text-center">
+        فرم صدور پیش‌فاکتور - اتمیفای
       </h1>
 
       {/* Invoice Info */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-1">
             <Label required>شماره فاکتور</Label>
             <button
               onClick={handleGenerateInvoiceNumber}
-              className="text-blue-400 hover:text-blue-300 transition-colors p-1 rounded hover:bg-blue-400/10"
+              className="text-blue-400 hover:text-blue-300 transition-colors p-1 rounded hover:bg-blue-400/10 shrink-0"
               title="تولید شماره فاکتور تصادفی"
               type="button"
             >
@@ -107,10 +107,10 @@ export const InvoiceForm = () => {
       </div>
 
       {/* Customer Info */}
-      <h2 className="text-xl font-bold text-blue-400 mb-4 text-right">
+      <h2 className="text-lg sm:text-xl font-bold text-blue-400 mb-3 sm:mb-4 text-right">
         اطلاعات مشتری
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div>
           <Label required>نام و نام خانوادگی</Label>
           <Input
@@ -168,12 +168,12 @@ export const InvoiceForm = () => {
       </div>
 
       {/* Payment Info */}
-      <h2 className="text-xl font-bold text-blue-400 mb-4 text-right flex items-center gap-2">
-        <CreditCard size={24} />
-        اطلاعات پرداخت
+      <h2 className="text-lg sm:text-xl font-bold text-blue-400 mb-3 sm:mb-4 text-right flex items-center gap-2">
+        <CreditCard size={20} className="sm:w-6 sm:h-6" />
+        <span>اطلاعات پرداخت</span>
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="md:col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="sm:col-span-2">
           <Label required>انتخاب شماره کارت</Label>
           <Select
             value={
@@ -240,7 +240,7 @@ export const InvoiceForm = () => {
         </div>
         
         {/* ✅ فیلد شماره شبا */}
-        <div>
+        <div className="sm:col-span-2">
           <Label>شماره شبا</Label>
           <Input
             value={invoice.paymentInfo.iban ?? ''}

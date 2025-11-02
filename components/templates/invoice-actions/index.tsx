@@ -95,48 +95,48 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
 
   return (
     <>
-      <div className="flex gap-4 justify-center flex-wrap">
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center flex-wrap">
         <button
           onClick={handleSave}
           disabled={!validation.isValid || isSaving}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg flex items-center gap-2 text-lg transition-colors shadow-lg hover:shadow-xl"
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg flex items-center justify-center gap-2 text-base sm:text-lg transition-colors shadow-lg hover:shadow-xl w-full sm:w-auto"
           title="ذخیره فاکتور در تاریخچه"
           type="button"
         >
           <Save size={20} />
-          {isSaving ? 'در حال ذخیره...' : 'ذخیره فاکتور'}
+          <span className="whitespace-nowrap">{isSaving ? 'در حال ذخیره...' : 'ذخیره فاکتور'}</span>
         </button>
         
         {onEmail && (
           <button
             onClick={handleEmail}
             disabled={!validation.isValid}
-            className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg flex items-center gap-2 text-lg transition-colors shadow-lg hover:shadow-xl"
+            className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg flex items-center justify-center gap-2 text-base sm:text-lg transition-colors shadow-lg hover:shadow-xl w-full sm:w-auto"
             title="ارسال فاکتور از طریق ایمیل"
             type="button"
           >
             <Mail size={20} />
-            ارسال ایمیل
+            <span className="whitespace-nowrap">ارسال ایمیل</span>
           </button>
         )}
         
         <button
           onClick={handlePreview}
           disabled={!validation.isValid}
-          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg flex items-center gap-2 text-lg transition-colors shadow-lg hover:shadow-xl"
+          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2.5 sm:px-6 sm:py-3 rounded-lg flex items-center justify-center gap-2 text-base sm:text-lg transition-colors shadow-lg hover:shadow-xl w-full sm:w-auto"
           type="button"
         >
-          <Eye size={24} />
-          پیش‌نمایش و چاپ
+          <Eye size={20} />
+          <span className="whitespace-nowrap">پیش‌نمایش و چاپ</span>
         </button>
       </div>
       
       {!validation.isValid && (
-        <div className="mt-4 bg-red-900/20 border border-red-500 rounded-lg p-4">
-          <p className="text-red-400 font-semibold mb-2 text-center">
+        <div className="mt-4 bg-red-900/20 border border-red-500 rounded-lg p-3 sm:p-4">
+          <p className="text-red-400 font-semibold mb-2 text-center text-sm sm:text-base">
             ⚠️ لطفاً موارد زیر را تکمیل کنید:
           </p>
-          <ul className="text-red-300 text-sm space-y-1 text-right list-disc list-inside">
+          <ul className="text-red-300 text-xs sm:text-sm space-y-1 text-right list-disc list-inside sm:list-outside sm:mr-4">
             {validation.errors.map((error, index) => (
               <li key={index}>{error.message}</li>
             ))}
