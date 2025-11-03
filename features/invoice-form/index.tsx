@@ -1,7 +1,7 @@
 'use client';
 
 import { useInvoiceStore } from '@/store/use-invoice-store';
-import { Input, Label, Select } from '@/components/atoms';
+import { Input, Label, Select } from '@/components/ui';
 import { RefreshCw, CreditCard } from 'lucide-react';
 import { companyCards } from '@/constants/company-info';
 import { formatCardNumber, formatIBAN } from '@/utils/formatter';
@@ -191,7 +191,7 @@ export const InvoiceForm = () => {
             ))}
           </Select>
         </div>
-        
+
         <div>
           <Label required>شماره کارت</Label>
           <Input
@@ -203,7 +203,7 @@ export const InvoiceForm = () => {
             error={errors['paymentInfo.cardNumber']}
           />
         </div>
-        
+
         <div>
           <Label required>نام صاحب کارت</Label>
           <Input
@@ -221,7 +221,7 @@ export const InvoiceForm = () => {
             error={errors['paymentInfo.cardHolderName']}
           />
         </div>
-        
+
         <div>
           <Label>نام بانک</Label>
           <Input
@@ -238,7 +238,7 @@ export const InvoiceForm = () => {
             readOnly
           />
         </div>
-        
+
         {/* ✅ فیلد شماره شبا */}
         <div className="sm:col-span-2">
           <Label>شماره شبا</Label>

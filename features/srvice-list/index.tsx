@@ -5,7 +5,7 @@ import { Plus, Check, X, Edit2, Trash2 } from 'lucide-react';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { formatPrice, parsePrice, formatNumber } from '@/utils/formatter';
 import { Service } from '@/types/type';
-import { Input, Label } from '@/components/atoms';
+import { Input, Label, Button } from '@/components/ui';
 
 export const ServiceList = () => {
   const { invoice, addService, editService, removeService } = useInvoiceStore();
@@ -145,14 +145,18 @@ export const ServiceList = () => {
             />
           </div>
         </div>
-        <button
-          onClick={handleAddService}
-          className="mt-3 sm:mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 sm:px-6 sm:py-2 rounded flex items-center justify-center sm:justify-start gap-2 w-full sm:w-auto mr-auto transition-colors text-sm sm:text-base"
-          type="button"
-        >
-          <Plus size={20} />
-          <span className="whitespace-nowrap">افزودن به لیست</span>
-        </button>
+        <div className='flex justify-end'>
+          <Button
+            onClick={handleAddService}
+            type="button"
+            variant="filled"
+            color="blue"
+            className="mt-3 sm:mt-4 sm:w-auto  text-sm sm:text-base"
+          >
+            <Plus size={20} />
+            <span className="whitespace-nowrap">افزودن به لیست</span>
+          </Button>
+        </div>
       </div>
 
       <div className="bg-gray-800 rounded-lg shadow-2xl p-4 sm:p-6 mb-4 sm:mb-6">
@@ -182,34 +186,40 @@ export const ServiceList = () => {
                     <div className="flex gap-2">
                       {editingId === service.id ? (
                         <>
-                          <button
+                          <Button
                             onClick={saveEdit}
-                            className="text-green-500 hover:text-green-400 p-1.5 rounded hover:bg-green-500/10 transition-colors"
                             title="ذخیره"
                             type="button"
+                            variant="ghost"
+                            color="green"
+                            size="sm"
                           >
                             <Check size={18} />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={cancelEdit}
-                            className="text-gray-400 hover:text-gray-300 p-1.5 rounded hover:bg-gray-600/50 transition-colors"
                             title="انصراف"
                             type="button"
+                            variant="ghost"
+                            color="gray"
+                            size="sm"
                           >
                             <X size={18} />
-                          </button>
+                          </Button>
                         </>
                       ) : (
                         <>
-                          <button
+                          <Button
                             onClick={() => startEdit(service)}
-                            className="text-blue-500 hover:text-blue-400 p-1.5 rounded hover:bg-blue-500/10 transition-colors"
                             title="ویرایش"
                             type="button"
+                            variant="ghost"
+                            color="blue"
+                            size="sm"
                           >
                             <Edit2 size={18} />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => {
                               if (
                                 confirm(
@@ -219,12 +229,14 @@ export const ServiceList = () => {
                                 removeService(service.id);
                               }
                             }}
-                            className="text-red-500 hover:text-red-400 p-1.5 rounded hover:bg-red-500/10 transition-colors"
                             title="حذف"
                             type="button"
+                            variant="ghost"
+                            color="red"
+                            size="sm"
                           >
                             <Trash2 size={18} />
-                          </button>
+                          </Button>
                         </>
                       )}
                     </div>
@@ -382,34 +394,40 @@ export const ServiceList = () => {
                       <td className="p-2 sm:p-3">
                         {editingId === service.id ? (
                           <div className="flex gap-2">
-                            <button
+                            <Button
                               onClick={saveEdit}
-                              className="text-green-500 hover:text-green-400 p-1 rounded hover:bg-green-500/10 transition-colors"
                               title="ذخیره"
                               type="button"
+                              variant="ghost"
+                              color="green"
+                              size="sm"
                             >
                               <Check size={18} />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               onClick={cancelEdit}
-                              className="text-gray-400 hover:text-gray-300 p-1 rounded hover:bg-gray-600/50 transition-colors"
                               title="انصراف"
                               type="button"
+                              variant="ghost"
+                              color="gray"
+                              size="sm"
                             >
                               <X size={18} />
-                            </button>
+                            </Button>
                           </div>
                         ) : (
                           <div className="flex gap-2">
-                            <button
+                            <Button
                               onClick={() => startEdit(service)}
-                              className="text-blue-500 hover:text-blue-400 p-1 rounded hover:bg-blue-500/10 transition-colors"
                               title="ویرایش"
                               type="button"
+                              variant="ghost"
+                              color="blue"
+                              size="sm"
                             >
                               <Edit2 size={18} />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               onClick={() => {
                                 if (
                                   confirm(
@@ -419,12 +437,14 @@ export const ServiceList = () => {
                                   removeService(service.id);
                                 }
                               }}
-                              className="text-red-500 hover:text-red-400 p-1 rounded hover:bg-red-500/10 transition-colors"
                               title="حذف"
                               type="button"
+                              variant="ghost"
+                              color="red"
+                              size="sm"
                             >
                               <Trash2 size={18} />
-                            </button>
+                            </Button>
                           </div>
                         )}
                       </td>
