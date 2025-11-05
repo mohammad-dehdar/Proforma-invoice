@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 import { getDb } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { serializeInvoice } from '@/lib/invoice-utils';
+import { serializeInvoice, InvoiceDocument } from '@/lib/invoice-utils';
 
 const serviceSchema = z.object({
   id: z.coerce.number(),
@@ -42,11 +42,11 @@ export async function GET(request: NextRequest) {
   }
 
   const db = await getDb();
-  const invoices = await db
+  const invoices = (await db
     .collection('invoices')
     .find({ userId: new ObjectId(user.id) })
     .sort({ createdAt: -1 })
-    .toArray();
+    .toArray()) as InvoiceDocument[];
 
   return NextResponse.json({ invoices: invoices.map((invoice) => serializeInvoice(invoice)) });
 }
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       updatedAt: now,
     });
 
-    const savedInvoice = await invoicesCollection.findOne({ _id: result.insertedId });
+    const savedInvoice = (await invoicesCollection.findOne({ _id: result.insertedId })) as InvoiceDocument | null;
 
     return NextResponse.json(
       {

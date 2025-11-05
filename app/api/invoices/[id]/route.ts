@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 import { getDb } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { serializeInvoice } from '@/lib/invoice-utils';
+import { serializeInvoice, InvoiceDocument } from '@/lib/invoice-utils';
 
 const serviceSchema = z.object({
   id: z.coerce.number(),
@@ -34,14 +34,15 @@ const invoiceSchema = z.object({
   notes: z.string().optional(),
 });
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getAuthenticatedUser(request);
 
   if (!user) {
     return NextResponse.json({ message: 'نیاز به ورود مجدد دارید' }, { status: 401 });
   }
 
-  const invoiceId = params.id;
+  const { id } = await params;
+  const invoiceId = id;
 
   if (!ObjectId.isValid(invoiceId)) {
     return NextResponse.json({ message: 'شناسه فاکتور معتبر نیست' }, { status: 400 });
@@ -94,7 +95,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       },
     );
 
-    const updatedInvoice = await invoicesCollection.findOne({ _id: invoiceObjectId });
+    const updatedInvoice = (await invoicesCollection.findOne({ _id: invoiceObjectId })) as InvoiceDocument | null;
 
     return NextResponse.json({ invoice: updatedInvoice ? serializeInvoice(updatedInvoice) : null });
   } catch (error) {
@@ -103,14 +104,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getAuthenticatedUser(request);
 
   if (!user) {
     return NextResponse.json({ message: 'نیاز به ورود مجدد دارید' }, { status: 401 });
   }
 
-  const invoiceId = params.id;
+  const { id } = await params;
+  const invoiceId = id;
 
   if (!ObjectId.isValid(invoiceId)) {
     return NextResponse.json({ message: 'شناسه فاکتور معتبر نیست' }, { status: 400 });
@@ -131,23 +133,24 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   return NextResponse.json({ success: true });
 }
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getAuthenticatedUser(request);
 
   if (!user) {
     return NextResponse.json({ message: 'نیاز به ورود مجدد دارید' }, { status: 401 });
   }
 
-  const invoiceId = params.id;
+  const { id } = await params;
+  const invoiceId = id;
 
   if (!ObjectId.isValid(invoiceId)) {
     return NextResponse.json({ message: 'شناسه فاکتور معتبر نیست' }, { status: 400 });
   }
 
   const db = await getDb();
-  const invoice = await db
+  const invoice = (await db
     .collection('invoices')
-    .findOne({ _id: new ObjectId(invoiceId), userId: new ObjectId(user.id) });
+    .findOne({ _id: new ObjectId(invoiceId), userId: new ObjectId(user.id) })) as InvoiceDocument | null;
 
   if (!invoice) {
     return NextResponse.json({ message: 'فاکتور پیدا نشد' }, { status: 404 });

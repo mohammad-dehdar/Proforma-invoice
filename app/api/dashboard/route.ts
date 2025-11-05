@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
 import { getDb } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { calculateInvoiceTotal, serializeInvoice } from '@/lib/invoice-utils';
+import { calculateInvoiceTotal, serializeInvoice, InvoiceDocument } from '@/lib/invoice-utils';
 
 export async function GET(request: NextRequest) {
   const user = await getAuthenticatedUser(request);
@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
   }
 
   const db = await getDb();
-  const invoices = await db
+  const invoices = (await db
     .collection('invoices')
     .find({ userId: new ObjectId(user.id) })
     .sort({ createdAt: -1 })
-    .toArray();
+    .toArray()) as InvoiceDocument[];
 
   const uniqueCustomers = new Set(
     invoices
