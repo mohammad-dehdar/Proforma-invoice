@@ -1,6 +1,7 @@
 export type Service = {
   id: number;
   description: string;
+  additionalDescription?: string;
   quantity: number;
   price: number;
 };

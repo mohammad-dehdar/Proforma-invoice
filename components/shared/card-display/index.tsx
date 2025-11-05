@@ -38,7 +38,8 @@ export const CardDisplay = ({ cardNumber, cardHolderName, bankName, iban }: Card
 
           {/* Middle: Card number */}
           <div className="mb-6">
-            <div className="font-mono text-lg sm:text-xl md:text-2xl tracking-widest font-light">
+            <div className="flex flex-col gap-2 font-mono text-lg sm:text-xl md:text-2xl tracking-widest font-light text-center">
+              <span className="text-gray-300 mb-1">شماره کارت</span>
               {cardNumber || "---- ---- ---- ----"}
             </div>
           </div>
@@ -49,7 +50,7 @@ export const CardDisplay = ({ cardNumber, cardHolderName, bankName, iban }: Card
               <div className="text-gray-300 mb-1">صاحب کارت</div>
               <div className="font-semibold">{cardHolderName || "-"}</div>
             </div>
-            <div className="text-right" dir="ltr">
+            <div dir="ltr">
               <div className="text-gray-300 mb-1">IBAN</div>
               <div className="font-mono break-all text-xs">{iban || "IR-- ---- ---- ---- ---- ---- --"}</div>
             </div>

@@ -12,6 +12,7 @@ export const ServiceList = () => {
   const [currentService, setCurrentService] = useState<Service>({
     id: 0,
     description: '',
+    additionalDescription: '',
     quantity: 1,
     price: 0,
   });
@@ -19,6 +20,7 @@ export const ServiceList = () => {
   const [editingService, setEditingService] = useState<Service>({
     id: 0,
     description: '',
+    additionalDescription: '',
     quantity: 1,
     price: 0,
   });
@@ -52,6 +54,7 @@ export const ServiceList = () => {
       setCurrentService({
         id: 0,
         description: '',
+        additionalDescription: '',
         quantity: 1,
         price: 0,
       });
@@ -75,7 +78,7 @@ export const ServiceList = () => {
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditingService({ id: 0, description: '', quantity: 1, price: 0 });
+    setEditingService({ id: 0, description: '', additionalDescription: '', quantity: 1, price: 0 });
     setErrors({});
   };
 
@@ -144,6 +147,21 @@ export const ServiceList = () => {
               error={errors.price}
             />
           </div>
+        </div>
+        <div className="mt-3 sm:mt-4">
+          <Label>توضیحات اضافه</Label>
+          <textarea
+            value={currentService.additionalDescription || ''}
+            onChange={(e) => {
+              setCurrentService({
+                ...currentService,
+                additionalDescription: e.target.value,
+              });
+            }}
+            placeholder="توضیحات اضافی (اختیاری)"
+            rows={3}
+            className="w-full bg-gray-700 text-white rounded px-4 py-2 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:border-blue-500 focus:ring-blue-500 text-right resize-none"
+          />
         </div>
         <div className='flex justify-end'>
           <Button
@@ -260,6 +278,27 @@ export const ServiceList = () => {
                         <span className="text-white">{service.description}</span>
                       )}
                     </div>
+                    {(service.additionalDescription || editingId === service.id) && (
+                      <div>
+                        <span className="text-gray-400">توضیحات اضافه:</span>{' '}
+                        {editingId === service.id ? (
+                          <textarea
+                            value={editingService.additionalDescription || ''}
+                            onChange={(e) =>
+                              setEditingService({
+                                ...editingService,
+                                additionalDescription: e.target.value,
+                              })
+                            }
+                            placeholder="توضیحات اضافی (اختیاری)"
+                            rows={2}
+                            className="w-full mt-1 bg-gray-600 text-white rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                          />
+                        ) : (
+                          <span className="text-white text-sm">{service.additionalDescription}</span>
+                        )}
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <span className="text-gray-400">تعداد:</span>{' '}
@@ -335,21 +374,45 @@ export const ServiceList = () => {
                     >
                       <td className="p-2 sm:p-3 text-white text-xs sm:text-sm">{formatNumber(index + 1)}</td>
                       <td className="p-2 sm:p-3 text-white text-xs sm:text-sm">
-                        {editingId === service.id ? (
-                          <input
-                            type="text"
-                            value={editingService.description}
-                            onChange={(e) =>
-                              setEditingService({
-                                ...editingService,
-                                description: e.target.value,
-                              })
-                            }
-                            className="w-full bg-gray-600 text-white rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
-                          />
-                        ) : (
-                          service.description
-                        )}
+                        <div className="space-y-1">
+                          {editingId === service.id ? (
+                            <>
+                              <input
+                                type="text"
+                                value={editingService.description}
+                                onChange={(e) =>
+                                  setEditingService({
+                                    ...editingService,
+                                    description: e.target.value,
+                                  })
+                                }
+                                className="w-full bg-gray-600 text-white rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
+                                placeholder="شرح خدمات"
+                              />
+                              <textarea
+                                value={editingService.additionalDescription || ''}
+                                onChange={(e) =>
+                                  setEditingService({
+                                    ...editingService,
+                                    additionalDescription: e.target.value,
+                                  })
+                                }
+                                placeholder="توضیحات اضافی (اختیاری)"
+                                rows={2}
+                                className="w-full bg-gray-600 text-white rounded px-2 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                              />
+                            </>
+                          ) : (
+                            <>
+                              <div>{service.description}</div>
+                              {service.additionalDescription && (
+                                <div className="text-gray-400 text-xs mt-1">
+                                  {service.additionalDescription}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </td>
                       <td className="p-2 sm:p-3 text-white text-xs sm:text-sm">
                         {editingId === service.id ? (

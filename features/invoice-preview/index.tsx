@@ -204,7 +204,14 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
                     {invoice.services.map((service: Service, index: number) => (
                       <tr key={service.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                         <td className="p-3 sm:p-4 text-slate-600 font-medium text-xs sm:text-sm">{formatNumber(index + 1)}</td>
-                        <td className="p-3 sm:p-4 text-slate-900 font-medium text-xs sm:text-sm">{service.description}</td>
+                        <td className="p-3 sm:p-4 text-slate-900 font-medium text-xs sm:text-sm">
+                          <div>
+                            <div>{service.description}</div>
+                            {service.additionalDescription && (
+                              <div className="text-slate-500 text-xs mt-1">{service.additionalDescription}</div>
+                            )}
+                          </div>
+                        </td>
                         <td className="p-3 sm:p-4 text-center text-slate-600 font-medium text-xs sm:text-sm">{formatNumber(service.quantity)}</td>
                         <td className="p-3 sm:p-4 text-slate-600 font-medium text-xs sm:text-sm">{formatPrice(service.price)} تومان</td>
                         <td className="p-3 sm:p-4 text-slate-900 font-bold text-xs sm:text-sm">
@@ -228,6 +235,12 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
                         <span className="text-slate-500 text-xs">شرح:</span>{' '}
                         <span className="text-slate-900 font-medium">{service.description}</span>
                       </div>
+                      {service.additionalDescription && (
+                        <div>
+                          <span className="text-slate-500 text-xs">توضیحات اضافه:</span>{' '}
+                          <span className="text-slate-600 text-xs">{service.additionalDescription}</span>
+                        </div>
+                      )}
                       <div className="grid grid-cols-4 gap-2">
                         <div className="col-span-1">
                           <span className="text-slate-500 text-xs">تعداد:</span>{' '}

@@ -1,10 +1,13 @@
 "use client"
 import { useInvoiceStore } from '@/store/use-invoice-store';
-import { Input, Label, Select } from '@/components/ui';
-import { RefreshCw, CreditCard } from 'lucide-react';
+import { Input, Label } from '@/components/ui';
+import { RefreshCw } from 'lucide-react';
 import { companyCards } from '@/constants/company-info';
 import { useState } from 'react';
-import { detectBankFromCardNumber } from '@/constants/bank-bins';
+import { detectBankFromCardNumber } from '@/utils/detect-bank ';
+import { CardSelector } from '@/components/shared/card-selector';
+import { CardDisplay } from '@/components/shared/card-display';
+
 
 const generateRandomInvoiceNumber = (): string => {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -152,93 +155,20 @@ export const InvoiceForm = () => {
       </div>
 
       {/* Payment Info */}
-      <h2 className="text-lg sm:text-xl font-bold text-blue-400 mb-3 sm:mb-4 text-right flex items-center gap-2">
-        <CreditCard size={20} className="sm:w-6 sm:h-6" />
-        <span>اطلاعات پرداخت</span>
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        <div className="sm:col-span-2">
-          <Label required>انتخاب شماره کارت</Label>
-          <Select
-            value={
-              companyCards.find(
-                (card) => card.cardNumber === invoice.paymentInfo.cardNumber
-              )?.id || ''
-            }
-            onChange={(e) => handleCardSelect(e.target.value)}
-          >
-            <option value="">انتخاب کنید...</option>
-            {companyCards.map((card) => (
-              <option key={card.id} value={card.id}>
-                {card.cardNumber} - {card.cardHolderName} ({detectBankFromCardNumber(card.cardNumber) || ""})
-              </option>
-            ))}
-          </Select>
-        </div>
+      <div className="space-y-4 sm:space-y-6">
+        <CardSelector
+          selectedCardNumber={invoice.paymentInfo.cardNumber}
+          onCardSelect={handleCardSelect}
+        />
 
-        <div>
-          <Label required>شماره کارت</Label>
-          <Input
-            value={invoice.paymentInfo.cardNumber}
-            onChange={(e) => setInvoice({ paymentInfo: { ...invoice.paymentInfo, cardNumber: e.target.value } })}
-            placeholder="1234-5678-9012-3456"
-            maxLength={19}
-            readOnly
-            error={errors['paymentInfo.cardNumber']}
+        {invoice.paymentInfo.cardNumber && (
+          <CardDisplay
+            cardNumber={invoice.paymentInfo.cardNumber}
+            cardHolderName={invoice.paymentInfo.cardHolderName}
+            bankName={invoice.paymentInfo.bankName}
+            iban={invoice.paymentInfo.iban}
           />
-        </div>
-
-        <div>
-          <Label required>نام صاحب کارت</Label>
-          <Input
-            value={invoice.paymentInfo.cardHolderName}
-            onChange={(e) =>
-              setInvoice({
-                paymentInfo: {
-                  ...invoice.paymentInfo,
-                  cardHolderName: e.target.value,
-                },
-              })
-            }
-            placeholder="نام و نام خانوادگی صاحب کارت"
-            readOnly
-            error={errors['paymentInfo.cardHolderName']}
-          />
-        </div>
-
-        <div>
-          <Label>نام بانک</Label>
-          <Input
-            value={invoice.paymentInfo.bankName ?? ''}
-            onChange={(e) =>
-              setInvoice({
-                paymentInfo: {
-                  ...invoice.paymentInfo,
-                  bankName: e.target.value,
-                },
-              })
-            }
-            placeholder="نام بانک صادرکننده کارت"
-            readOnly
-          />
-        </div>
-
-        {/* ✅ فیلد شماره شبا */}
-        <div className="sm:col-span-2">
-          <Label>شماره شبا</Label>
-          <Input
-            value={invoice.paymentInfo.iban ?? ''}
-            onChange={(e) => setInvoice({ paymentInfo: { ...invoice.paymentInfo, iban: e.target.value } })}
-            placeholder="IR02 0160 0000 0000 0030 7454 684"
-            maxLength={32}
-            readOnly
-            error={errors['paymentInfo.iban']}
-            isRTL={false}
-          />
-          <p className="text-xs text-gray-400 mt-1 text-right">
-            شماره شبا 26 رقمی که با IR شروع می‌شود
-          </p>
-        </div>
+        )}
       </div>
     </div>
   )

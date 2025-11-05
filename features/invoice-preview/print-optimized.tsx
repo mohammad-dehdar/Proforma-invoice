@@ -122,7 +122,14 @@ export const PrintOptimizedInvoice = ({ invoice, onClose }: PrintOptimizedInvoic
                                     {invoice.services.map((service: Service, index: number) => (
                                         <tr key={service.id} className="border-b border-slate-100">
                                             <td className="py-1 px-2 text-slate-600">{formatNumber(index + 1)}</td>
-                                            <td className="py-1 px-2 text-slate-900">{service.description}</td>
+                                            <td className="py-1 px-2 text-slate-900">
+                                                <div>
+                                                    <div>{service.description}</div>
+                                                    {service.additionalDescription && (
+                                                        <div className="text-slate-500 text-[10px] mt-0.5">{service.additionalDescription}</div>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="py-1 px-2 text-center text-slate-600">{formatNumber(service.quantity)}</td>
                                             <td className="py-1 px-2 text-slate-600">{formatPrice(service.price)}</td>
                                             <td className="py-1 px-2 text-slate-900 font-bold">{formatPrice(service.quantity * service.price)}</td>

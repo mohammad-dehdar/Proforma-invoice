@@ -2,7 +2,7 @@
 
 import { CreditCard, Check } from "lucide-react"
 import { companyCards } from "@/constants/company-info"
-import { detectBankFromCardNumber } from "@/constants/bank-bins"
+import { detectBankFromCardNumber } from "@/utils/detect-bank "
 import { useState } from "react"
 
 interface CardSelectorProps {
