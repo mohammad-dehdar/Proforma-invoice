@@ -101,23 +101,29 @@ export function verifySessionToken(token: string): AuthTokenPayload | null {
 }
 
 export async function ensureDefaultUser(): Promise<void> {
-  const username = process.env.AUTH_DEFAULT_USERNAME;
-  const password = process.env.AUTH_DEFAULT_PASSWORD;
+  try {
+    const username = process.env.AUTH_DEFAULT_USERNAME;
+    const password = process.env.AUTH_DEFAULT_PASSWORD;
 
-  if (!username || !password) {
-    return;
-  }
+    if (!username || !password) {
+      return;
+    }
 
-  const db = await getDb();
-  const users = db.collection('users');
-  const existing = await users.findOne({ username });
+    const db = await getDb();
+    const users = db.collection('users');
+    const existing = await users.findOne({ username });
 
-  if (!existing) {
-    await users.insertOne({
-      username,
-      passwordHash: hashPassword(password),
-      createdAt: new Date(),
-    });
+    if (!existing) {
+      await users.insertOne({
+        username,
+        passwordHash: hashPassword(password),
+        createdAt: new Date(),
+      });
+    }
+  } catch (error) {
+    // Silently fail during build time or if database is not available
+    // This function will be called again at runtime when the route is actually invoked
+    console.warn('Failed to ensure default user:', error);
   }
 }
 
