@@ -4,7 +4,7 @@ import { Input, Label } from '@/components/ui';
 import { RefreshCw } from 'lucide-react';
 import { companyCards } from '@/constants/company-info';
 import { useState } from 'react';
-import { detectBankFromCardNumber } from '@/utils/detect-bank ';
+import { detectBankFromCardNumber } from '@/utils/detect-bank';
 import { CardSelector } from '@/components/shared/card-selector';
 import { CardDisplay } from '@/components/shared/card-display';
 

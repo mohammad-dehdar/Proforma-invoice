@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Invoice, Service } from '@/types/type';
 import { companyCards } from '@/constants/company-info';
-import { detectBankFromCardNumber } from '@/utils/detect-bank ';
+import { detectBankFromCardNumber } from '@/utils/detect-bank';
 
 interface InvoiceStore {
   invoice: Invoice;
