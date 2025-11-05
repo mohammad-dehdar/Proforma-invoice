@@ -80,9 +80,9 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
                 <Image
                   src={companyInfo.logo || "/placeholder.svg"}
                   alt={companyInfo.name}
-                  width={50}
-                  height={50}
-                  className="sm:w-[60px] sm:h-[60px] md:w-[70px] md:h-[70px]"
+                  width={80}
+                  height={40}
+                  className="h-10 w-auto sm:h-12 md:h-14 object-contain"
                 />
               </div>
             </div>
@@ -324,11 +324,12 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
     /* صفحه چاپ - کاهش margin برای فضای بیشتر */
     @page {
       size: A4;
-      margin: 8mm 10mm !important;
+      margin: 6mm 8mm !important;
     }
 
     /* Ensure print container is visible */
     .print-container {
+      --invoice-print-scale: 0.92;
       max-width: 100% !important;
       box-shadow: none !important;
       border-radius: 0 !important;
@@ -336,6 +337,9 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
       margin: 0 !important;
       padding: 0 !important;
       page-break-inside: avoid !important;
+      transform: scale(var(--invoice-print-scale));
+      transform-origin: top center;
+      width: calc(100% / var(--invoice-print-scale));
     }
 
     /* کاهش padding header */
@@ -460,6 +464,7 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
       margin-bottom: 0.5rem !important;
       font-size: 0.7rem !important;
       border-collapse: collapse !important;
+      page-break-inside: avoid !important;
     }
 
     .print-container table thead tr {
@@ -516,6 +521,7 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
     .print-container .bg-amber-50 {
       padding: 0.5rem !important;
       margin-bottom: 0.5rem !important;
+      page-break-inside: avoid !important;
     }
 
     .print-container .bg-amber-50 h3 {
@@ -525,6 +531,10 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
 
     .print-container .bg-amber-50 p {
       font-size: 0.65rem !important;
+    }
+
+    .print-container .grid {
+      page-break-inside: avoid !important;
     }
 
     /* Footer */
@@ -606,8 +616,10 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
 
     /* کاهش اندازه logo */
     .print-container img {
-      width: 40px !important;
-      height: 40px !important;
+      height: 38px !important;
+      width: auto !important;
+      max-width: 120px !important;
+      object-fit: contain !important;
     }
 
     /* کاهش اندازه icon */
