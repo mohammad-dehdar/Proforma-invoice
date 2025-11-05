@@ -1,5 +1,5 @@
 export * from './invoice-form';
-export * from './srvice-list';
+export * from './service-list';
 export * from './invoice-actions';
 export * from './invoice-preview';
 export * from './discount-tax';

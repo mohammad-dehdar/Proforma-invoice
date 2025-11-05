@@ -19,6 +19,17 @@ Proforma-invoice/
 │   │   ├── MainLayout.tsx
 │   │   └── index.ts
 │   │
+│   ├── templates/                   # کامپوننت‌های قالب (Template)
+│   │   ├── dashboard/
+│   │   ├── discount-tax/
+│   │   ├── email-modal/
+│   │   ├── invoice-actions/
+│   │   ├── invoice-form/
+│   │   ├── invoice-history/
+│   │   ├── invoice-preview/
+│   │   │   └── print-optimized.tsx  # نسخه بهینه برای چاپ
+│   │   ├── service-list/
+│   │   └── index.tsx
 │   ├── shared/                      # کامپوننت‌های مشترک بین بخش‌ها
 │   │   ├── card-display/
 │   │   │   └── index.tsx
