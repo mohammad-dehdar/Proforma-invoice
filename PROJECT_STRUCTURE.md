@@ -12,14 +12,8 @@ Proforma-invoice/
 │   └── page.tsx                     # صفحه اصلی (Home)
 │
 ├── 🧩 components/                   # کامپوننت‌های React
-│   ├── atoms/                       # کامپوننت‌های اتمی (کوچک‌ترین واحد)
-│   │   ├── Buttons.tsx
-│   │   ├── Input.tsx
-│   │   ├── Label.tsx
-│   │   ├── Select.tsx
-│   │   └── index.ts                 # Export مرکزی
-│   │
-│   ├── layout/                      # کامپوننت‌های لایه‌بندی
+│   ├── etmify-invoice-form.tsx      # فرم اصلی فاکتور
+│   ├── layout/                      # کامپوننت‌های لایه‌بندی (Header, Footer و ...)
 │   │   ├── Footer.tsx
 │   │   ├── Header.tsx
 │   │   ├── MainLayout.tsx
@@ -36,8 +30,20 @@ Proforma-invoice/
 │   │   │   └── print-optimized.tsx  # نسخه بهینه برای چاپ
 │   │   ├── service-list/
 │   │   └── index.tsx
+│   ├── shared/                      # کامپوننت‌های مشترک بین بخش‌ها
+│   │   ├── card-display/
+│   │   │   └── index.tsx
+│   │   └── card-selector/
+│   │       └── index.tsx
 │   │
-│   └── etmify-invoice-form.tsx      # فرم اصلی فاکتور
+│   └── ui/                          # اجزای UI قابل استفاده مجدد
+│       ├── Buttons.tsx
+│       ├── Input.tsx
+│       ├── Label.tsx
+│       ├── Modal.tsx
+│       ├── Select.tsx
+│       ├── StatCard.tsx
+│       └── index.ts
 │
 ├── ⚙️ config/                       # تنظیمات پروژه
 │   ├── env.ts                       # متغیرهای محیطی
@@ -130,9 +136,10 @@ Proforma-invoice/
 پروژه از الگوی Atomic Design استفاده می‌کند:
 
 ```
-atoms/          → کامپوننت‌های پایه (Button, Input, Label)
-templates/      → کامپوننت‌های صفحه/قالب (Dashboard, Invoice Form)
-components/     → کامپوننت‌های ترکیبی
+layout/         → ساختار کلی صفحه (Header, Footer, MainLayout)
+shared/         → المان‌های مشترک (CardDisplay، CardSelector)
+ui/             → اجزای پایه UI (Buttons، Input، Select و ...)
+etmify-invoice-form.tsx → فرم اصلی Proforma Invoice
 ```
 
 ### Feature-based Organization
