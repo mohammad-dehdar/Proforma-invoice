@@ -16,6 +16,27 @@ interface AuthState {
   clearError: () => void;
 }
 
+const defaultAuthState: AuthState = {
+  user: null,
+  loading: false,
+  error: null,
+  initialized: false,
+  login: async () => false,
+  logout: async () => {},
+  checkSession: async () => {},
+  clearError: () => {}
+};
+
+// Create a stable server snapshot for SSR (cached to avoid infinite loops)
+let cachedAuthServerSnapshot: AuthState | null = null;
+
+const getAuthServerSnapshot = (): AuthState => {
+  if (!cachedAuthServerSnapshot) {
+    cachedAuthServerSnapshot = defaultAuthState;
+  }
+  return cachedAuthServerSnapshot;
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: false,
@@ -84,3 +105,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 }));
+
+// Add getServerSnapshot to the store for SSR support
+// This ensures React's useSyncExternalStore has a stable cached server snapshot
+// The snapshot is cached to prevent infinite loops when components subscribe
+// @ts-expect-error - Zustand stores don't have getServerSnapshot in their type definition, but we add it for SSR
+useAuthStore.getServerSnapshot = getAuthServerSnapshot;

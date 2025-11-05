@@ -61,7 +61,7 @@ export const InvoiceForm = () => {
       {/* Invoice Info */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2">
             <Label required>شماره فاکتور</Label>
             <button
               onClick={handleGenerateInvoiceNumber}

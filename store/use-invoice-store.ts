@@ -14,11 +14,11 @@ interface InvoiceStore {
   loadInvoice: (invoice: Invoice) => void;
 }
 
-// تابع کمکی برای ایجاد فاکتور پیش‌فرض
+// Helper to create a fresh default invoice (used for initial state and reset)
 const createDefaultInvoice = (): Invoice => {
   const defaultCard = companyCards.find(card => card.isDefault) || companyCards[0];
   const detectedBankName = detectBankFromCardNumber(defaultCard.cardNumber) || '';
-
+  
   return {
     _id: undefined,
     number: '',
@@ -34,12 +34,30 @@ const createDefaultInvoice = (): Invoice => {
       cardNumber: defaultCard.cardNumber,
       cardHolderName: defaultCard.cardHolderName,
       bankName: detectedBankName,
-      iban: defaultCard.iban // ✅ شماره شبا اضافه شد
+      iban: defaultCard.iban
     },
     discount: 0,
     tax: 9,
-      notes: ''
+    notes: ''
   };
+};
+
+// Create a stable server snapshot for SSR (cached to avoid infinite loops)
+let cachedServerSnapshot: InvoiceStore | null = null;
+
+const getServerSnapshot = (): InvoiceStore => {
+  if (!cachedServerSnapshot) {
+    cachedServerSnapshot = {
+      invoice: createDefaultInvoice(),
+      setInvoice: () => {},
+      addService: () => {},
+      editService: () => {},
+      removeService: () => {},
+      reset: () => {},
+      loadInvoice: () => {}
+    };
+  }
+  return cachedServerSnapshot;
 };
 
 export const useInvoiceStore = create<InvoiceStore>()(
@@ -99,3 +117,9 @@ export const useInvoiceStore = create<InvoiceStore>()(
     }
   )
 );
+
+// Add getServerSnapshot to the store for SSR support
+// This ensures React's useSyncExternalStore has a stable cached server snapshot
+// The snapshot is cached to prevent infinite loops when components subscribe
+// @ts-expect-error - Zustand stores don't have getServerSnapshot in their type definition, but we add it for SSR
+useInvoiceStore.getServerSnapshot = getServerSnapshot;

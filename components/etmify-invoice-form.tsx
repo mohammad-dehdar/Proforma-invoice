@@ -12,6 +12,7 @@ import {
   InvoiceHistory,
 } from '@/features';
 import { FileText, Home, History } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { View } from '@/types/type';
 import { useAuthStore } from '@/store/use-auth-store';
@@ -24,13 +25,15 @@ export default function InvoicePage() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const { invoice } = useInvoiceStore();
   const router = useRouter();
-  const { user, logout, checkSession, initialized, loading } = useAuthStore((state) => ({
-    user: state.user,
-    logout: state.logout,
-    checkSession: state.checkSession,
-    initialized: state.initialized,
-    loading: state.loading,
-  }));
+  const { user, logout, checkSession, initialized, loading } = useAuthStore(
+    useShallow((state) => ({
+      user: state.user,
+      logout: state.logout,
+      checkSession: state.checkSession,
+      initialized: state.initialized,
+      loading: state.loading,
+    }))
+  );
 
   useEffect(() => {
     if (!initialized) {

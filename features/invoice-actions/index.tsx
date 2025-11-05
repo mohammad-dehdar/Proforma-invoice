@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useShallow } from 'zustand/react/shallow';
 import { Eye, Save, Mail } from 'lucide-react';
 import { Button, Modal } from '@/components/ui';
 import { useInvoiceStore } from '@/store/use-invoice-store';
@@ -13,10 +14,12 @@ interface InvoiceActionsProps {
 }
 
 export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
-  const { invoice, setInvoice } = useInvoiceStore((state) => ({
-    invoice: state.invoice,
-    setInvoice: state.setInvoice,
-  }));
+  const { invoice, setInvoice } = useInvoiceStore(
+    useShallow((state) => ({
+      invoice: state.invoice,
+      setInvoice: state.setInvoice,
+    }))
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [errorModal, setErrorModal] = useState<string | null>(null);
   const [successModal, setSuccessModal] = useState<string | null>(null);

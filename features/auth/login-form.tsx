@@ -2,17 +2,20 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useShallow } from 'zustand/react/shallow';
 import { Button, Input, Label } from '@/components/ui';
 import { useAuthStore } from '@/store/use-auth-store';
 
 export const LoginForm = () => {
   const router = useRouter();
-  const { login, loading, error, clearError } = useAuthStore((state) => ({
-    login: state.login,
-    loading: state.loading,
-    error: state.error,
-    clearError: state.clearError,
-  }));
+  const { login, loading, error, clearError } = useAuthStore(
+    useShallow((state) => ({
+      login: state.login,
+      loading: state.loading,
+      error: state.error,
+      clearError: state.clearError,
+    }))
+  );
 
   const [credentials, setCredentials] = useState({ username: '', password: '' });
 
