@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Eye, Save, Mail } from 'lucide-react';
 import { Button, Modal } from '@/components/ui';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { validateInvoice } from '@/utils/validation';
-import { useState } from 'react';
+import { INVOICE_DATA_UPDATED_EVENT } from '@/constants/events';
 
 interface InvoiceActionsProps {
   onPreview: () => void;
@@ -13,13 +15,65 @@ interface InvoiceActionsProps {
 
 export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
   const { invoice } = useInvoiceStore();
+  const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [errorModal, setErrorModal] = useState<string | null>(null);
   const [successModal, setSuccessModal] = useState<string | null>(null);
   const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
-  const [pendingExistingIndex, setPendingExistingIndex] = useState<number | null>(null);
 
   const validation = validateInvoice(invoice);
+
+  const handleUnauthorized = () => {
+    router.push('/login');
+    router.refresh();
+  };
+
+  const triggerInvoiceUpdateEvent = () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(INVOICE_DATA_UPDATED_EVENT));
+    }
+  };
+
+  const persistInvoice = async (method: 'POST' | 'PUT') => {
+    const endpoint =
+      method === 'POST'
+        ? '/api/invoices'
+        : `/api/invoices/${encodeURIComponent(invoice.number)}`;
+
+    const response = await fetch(endpoint, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(invoice),
+    });
+
+    if (response.status === 401) {
+      handleUnauthorized();
+      return null;
+    }
+
+    if (response.status === 422) {
+      const data = await response.json();
+      const errorMessages = (data.errors || [])
+        .map((err: { message: string }) => err.message)
+        .join('\n');
+      setErrorModal(
+        `لطفاً خطاهای زیر را بررسی کنید:\n\n${errorMessages || 'اطلاعات وارد شده معتبر نیست.'}`
+      );
+      return null;
+    }
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'خطا در ذخیره فاکتور.');
+    }
+
+    const data = await response.json();
+    triggerInvoiceUpdateEvent();
+    setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
+    return data.invoice;
+  };
 
   const handleSave = async () => {
     if (!validation.isValid) {
@@ -31,36 +85,42 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
     setIsSaving(true);
 
     try {
-      // بررسی دسترسی به localStorage
-      if (typeof window === 'undefined') {
-        throw new Error('localStorage در دسترس نیست');
+      const result = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invoice),
+      });
+
+      if (result.status === 401) {
+        handleUnauthorized();
+        return;
       }
 
-      const history = JSON.parse(
-        localStorage.getItem('invoice-history') || '[]'
-      );
-
-      // بررسی تکراری نبودن شماره فاکتور
-      const existingIndex = history.findIndex(
-        (inv: typeof invoice) => inv.number === invoice.number
-      );
-
-      if (existingIndex !== -1) {
-        // Show confirm modal and wait for user's choice via stateful flow
-        setPendingExistingIndex(existingIndex);
+      if (result.status === 409) {
         setConfirmReplaceOpen(true);
-        return; // stop here; confirm handler continues the save
-      } else {
-        // اضافه کردن فاکتور جدید
-        history.push({
-          ...invoice,
-          createdAt: new Date().toISOString(),
-        });
+        return;
       }
 
-      localStorage.setItem('invoice-history', JSON.stringify(history));
+      if (result.status === 422) {
+        const data = await result.json();
+        const errorMessages = (data.errors || [])
+          .map((err: { message: string }) => err.message)
+          .join('\n');
+        setErrorModal(
+          `لطفاً خطاهای زیر را بررسی کنید:\n\n${errorMessages || 'اطلاعات وارد شده معتبر نیست.'}`
+        );
+        return;
+      }
 
-      // نمایش پیام موفقیت
+      if (!result.ok) {
+        const data = await result.json().catch(() => ({}));
+        throw new Error(data.error || 'خطا در ذخیره فاکتور.');
+      }
+
+      await result.json();
+      triggerInvoiceUpdateEvent();
       setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
     } catch (error) {
       console.error('خطا در ذخیره فاکتور:', error);
@@ -70,27 +130,16 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
     }
   };
 
-  const handleConfirmReplace = () => {
+  const handleConfirmReplace = async () => {
+    setIsSaving(true);
+
     try {
-      if (typeof window === 'undefined') {
-        throw new Error('localStorage در دسترس نیست');
-      }
-      const history = JSON.parse(
-        localStorage.getItem('invoice-history') || '[]'
-      );
-      if (pendingExistingIndex === null) return;
-      history[pendingExistingIndex] = {
-        ...invoice,
-        updatedAt: new Date().toISOString(),
-      };
-      localStorage.setItem('invoice-history', JSON.stringify(history));
-      setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
+      await persistInvoice('PUT');
     } catch (error) {
       console.error('خطا در ذخیره فاکتور:', error);
       setErrorModal('❌ خطا در ذخیره فاکتور! لطفاً دوباره تلاش کنید.');
     } finally {
       setConfirmReplaceOpen(false);
-      setPendingExistingIndex(null);
       setIsSaving(false);
     }
   };
@@ -197,7 +246,7 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
       </Modal>
 
       {/* Confirm Replace Modal */}
-      <Modal
+  <Modal
         isOpen={confirmReplaceOpen}
         onClose={() => {
           setConfirmReplaceOpen(false);
@@ -212,7 +261,6 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
               onClick={() => {
                 setConfirmReplaceOpen(false);
                 setIsSaving(false);
-                setPendingExistingIndex(null);
               }}
             >
               انصراف
@@ -220,8 +268,9 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
             <Button
               variant="primary"
               onClick={handleConfirmReplace}
+              disabled={isSaving}
             >
-              جایگزین کن
+              {isSaving ? 'در حال ذخیره...' : 'جایگزین کن'}
             </Button>
           </>
         }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   InvoiceActions,
   InvoiceForm,
@@ -11,18 +12,37 @@ import {
   EmailModal,
   InvoiceHistory,
 } from '@/features';
-import { FileText, Home, History } from 'lucide-react';
+import { FileText, Home, History, LogOut } from 'lucide-react';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { View } from '@/types/type';
+import { Button } from '@/components/ui';
 
 export default function InvoicePage() {
   const [currentView, setCurrentView] = useState<View>('invoice');
   const [showPreview, setShowPreview] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const { invoice } = useInvoiceStore();
+  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!response.ok) {
+        throw new Error('خطا در خروج از حساب کاربری');
+      }
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsLoggingOut(false);
+      router.push('/login');
+      router.refresh();
+    }
   };
 
   const renderView = () => {
@@ -104,6 +124,19 @@ export default function InvoicePage() {
                   <History size={14} className="sm:w-4 sm:h-4" />
                   <span className="whitespace-nowrap">تاریخچه</span>
                 </button>
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  color="gray"
+                  size="sm"
+                  className="!px-3 !py-2"
+                  disabled={isLoggingOut}
+                  title="خروج از حساب"
+                  type="button"
+                >
+                  <LogOut size={16} />
+                  <span>{isLoggingOut ? 'در حال خروج...' : 'خروج'}</span>
+                </Button>
               </div>
             </div>
           </div>

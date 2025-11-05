@@ -31,6 +31,14 @@ export type Invoice = {
   notes?: string;
 };
 
+export type InvoiceWithMeta = Invoice & {
+  _id?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+};
+
 // تایپ‌های validation
 export type ValidationError = {
   field: string;

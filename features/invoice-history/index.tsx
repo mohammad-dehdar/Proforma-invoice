@@ -1,49 +1,107 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FileText, Trash2, Eye } from 'lucide-react';
 import { formatPrice, formatNumber } from '@/utils/formatter';
-import { Invoice } from '@/types/type';
+import { Invoice, InvoiceWithMeta } from '@/types/type';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { Modal, Button } from '@/components/ui';
+import { INVOICE_DATA_UPDATED_EVENT } from '@/constants/events';
 
 interface InvoiceHistoryProps {
     onNavigateToInvoice?: () => void;
 }
 
 export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => {
-    const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [invoices, setInvoices] = useState<InvoiceWithMeta[]>([]);
     const { loadInvoice } = useInvoiceStore();
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<null | string>(null);
     const [infoModal, setInfoModal] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const router = useRouter();
+
+    const handleUnauthorized = useCallback(() => {
+        router.push('/login');
+        router.refresh();
+    }, [router]);
+
+    const fetchInvoices = useCallback(async () => {
+        setIsLoading(true);
+        setErrorMessage(null);
+
+        try {
+            const response = await fetch('/api/invoices');
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.error || 'خطا در دریافت فاکتورها.');
+            }
+
+            const data = await response.json();
+            setInvoices(data.invoices || []);
+        } catch (error) {
+            console.error('Error loading invoice history:', error);
+            setErrorMessage('خطا در بارگذاری تاریخچه فاکتورها. لطفاً دوباره تلاش کنید.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [handleUnauthorized]);
 
     useEffect(() => {
-        const loadHistory = () => {
-            try {
-                const history = JSON.parse(localStorage.getItem('invoice-history') || '[]');
-                setInvoices([...history].reverse()); // Show newest first
-            } catch (error) {
-                console.error('Error loading invoice history:', error);
-            }
+        fetchInvoices();
+
+        const handleUpdate = () => {
+            fetchInvoices();
         };
-        loadHistory();
-    }, []);
+
+        window.addEventListener(INVOICE_DATA_UPDATED_EVENT, handleUpdate);
+
+        return () => {
+            window.removeEventListener(INVOICE_DATA_UPDATED_EVENT, handleUpdate);
+        };
+    }, [fetchInvoices]);
 
     const handleDelete = (invoiceNumber: string) => {
         setConfirmDeleteOpen(invoiceNumber);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (!confirmDeleteOpen) return;
+        setIsDeleting(true);
+        setErrorMessage(null);
+
         try {
-            const history = JSON.parse(localStorage.getItem('invoice-history') || '[]');
-            const updated = history.filter((inv: Invoice) => inv.number !== confirmDeleteOpen);
-            localStorage.setItem('invoice-history', JSON.stringify(updated));
-            setInvoices(updated.reverse());
+            const response = await fetch(`/api/invoices/${encodeURIComponent(confirmDeleteOpen)}`, {
+                method: 'DELETE',
+            });
+
+            if (response.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.error || 'خطا در حذف فاکتور.');
+            }
+
+            setConfirmDeleteOpen(null);
+            setInfoModal('✅ فاکتور مورد نظر با موفقیت حذف شد.');
+            window.dispatchEvent(new Event(INVOICE_DATA_UPDATED_EVENT));
+            await fetchInvoices();
         } catch (error) {
             console.error('Error deleting invoice:', error);
+            setErrorMessage('خطا در حذف فاکتور. لطفاً دوباره تلاش کنید.');
         } finally {
-            setConfirmDeleteOpen(null);
+            setIsDeleting(false);
         }
     };
 
@@ -58,6 +116,11 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
         return afterDiscount + tax;
     };
 
+    const loadInvoiceForEditing = (invoice: InvoiceWithMeta) => {
+        const { _id, createdAt, updatedAt, createdBy, updatedBy, ...invoiceData } = invoice;
+        loadInvoice(invoiceData);
+    };
+
     return (
         <>
             <div className="space-y-4 sm:space-y-6">
@@ -68,7 +131,22 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                     </p>
                 </div>
 
-                {invoices.length === 0 ? (
+                {errorMessage && (
+                    <div className="bg-red-500/10 border border-red-500 text-red-300 text-sm rounded-lg p-3 text-right">
+                        {errorMessage}
+                    </div>
+                )}
+
+                {isLoading ? (
+                    <div className="space-y-3">
+                        {Array.from({ length: 3 }).map((_, index) => (
+                            <div key={index} className="bg-gray-800 rounded-lg p-4 animate-pulse">
+                                <div className="h-4 bg-gray-700 rounded w-1/3 mb-3"></div>
+                                <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                            </div>
+                        ))}
+                    </div>
+                ) : invoices.length === 0 ? (
                     <div className="bg-gray-800 rounded-lg p-8 sm:p-12 text-center">
                         <FileText size={40} className="sm:w-12 sm:h-12 mx-auto text-gray-600 mb-3 sm:mb-4" />
                         <p className="text-gray-400 text-base sm:text-lg">هنوز فاکتوری ثبت نشده است</p>
@@ -137,7 +215,7 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                                         <div className="flex gap-2 sm:mr-4 shrink-0 self-start sm:self-center">
                                             <button
                                                 onClick={() => {
-                                                    loadInvoice(invoice);
+                                                    loadInvoiceForEditing(invoice);
                                                     if (onNavigateToInvoice) {
                                                         onNavigateToInvoice();
                                                     } else {
@@ -194,8 +272,8 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                         <Button variant="secondary" onClick={() => setConfirmDeleteOpen(null)}>
                             انصراف
                         </Button>
-                        <Button variant="primary" onClick={confirmDelete}>
-                            حذف
+                        <Button variant="primary" onClick={confirmDelete} disabled={isDeleting}>
+                            {isDeleting ? 'در حال حذف...' : 'حذف'}
                         </Button>
                     </>
                 }

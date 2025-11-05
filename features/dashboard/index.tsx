@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { TrendingUp, Users, FileText, DollarSign } from 'lucide-react';
 import { StatCard } from '@ui/StatCard';
 import { formatPrice, formatNumber, calculateTotal } from '@/utils/formatter';
-import { Invoice, Service } from '@/types/type';
+import { InvoiceWithMeta, Service } from '@/types/type';
+import { INVOICE_DATA_UPDATED_EVENT } from '@/constants/events';
 
 export const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -13,72 +15,75 @@ export const Dashboard = () => {
     totalCustomers: 0,
     thisMonth: 0,
   });
-  const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
+  const [recentInvoices, setRecentInvoices] = useState<InvoiceWithMeta[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const loadStats = () => {
+    let isMounted = true;
+
+    const handleUnauthorized = () => {
+      router.push('/login');
+      router.refresh();
+    };
+
+    const loadStats = async () => {
+      if (!isMounted) return;
+
       setIsLoading(true);
+      setErrorMessage(null);
 
       try {
-        // بررسی دسترسی به localStorage
-        if (typeof window === 'undefined') {
+        const response = await fetch('/api/dashboard');
+
+        if (response.status === 401) {
+          handleUnauthorized();
           return;
         }
 
-        const history: Invoice[] = JSON.parse(
-          localStorage.getItem('invoice-history') || '[]'
-        );
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'خطا در دریافت اطلاعات داشبورد.');
+        }
 
-        // محاسبه کل درآمد
-        const total = history.reduce((sum: number, inv: Invoice) => {
-          const subtotal = inv.services.reduce(
-            (s: number, service: Service) =>
-              s + service.price * service.quantity,
-            0
-          );
-          return sum + calculateTotal(subtotal, inv.discount, inv.tax);
-        }, 0);
+        const data = await response.json();
 
-        // محاسبه فاکتورهای ماه جاری
-        const now = new Date();
-        const thisMonthCount = history.filter((inv: Invoice) => {
-          const parts = inv.date.split('/');
-          if (parts.length === 3) {
-            const invMonth = parseInt(parts[1]);
-            return invMonth === now.getMonth() + 1;
-          }
-          return false;
-        }).length;
-
-        // تعداد مشتریان منحصر به فرد
-        const uniqueCustomers = new Set(
-          history.map((inv: Invoice) => inv.customer.name)
-        ).size;
+        if (!isMounted) return;
 
         setStats({
-          totalInvoices: history.length,
-          totalRevenue: total,
-          totalCustomers: uniqueCustomers,
-          thisMonth: thisMonthCount,
+          totalInvoices: data.stats.totalInvoices || 0,
+          totalRevenue: data.stats.totalRevenue || 0,
+          totalCustomers: data.stats.totalCustomers || 0,
+          thisMonth: data.stats.thisMonth || 0,
         });
-
-        // آخرین فاکتورها
-        setRecentInvoices(history.slice(-5).reverse());
+        setRecentInvoices(data.recentInvoices || []);
       } catch (error) {
+        if (!isMounted) return;
         console.error('خطا در بارگذاری آمار داشبورد:', error);
+        setErrorMessage('خطا در دریافت اطلاعات داشبورد. لطفاً دوباره تلاش کنید.');
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadStats();
 
-    // بروزرسانی هر 30 ثانیه
+    const handleUpdate = () => {
+      loadStats();
+    };
+
+    window.addEventListener(INVOICE_DATA_UPDATED_EVENT, handleUpdate);
     const interval = setInterval(loadStats, 30000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      isMounted = false;
+      window.removeEventListener(INVOICE_DATA_UPDATED_EVENT, handleUpdate);
+      clearInterval(interval);
+    };
+  }, [router]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -126,6 +131,11 @@ export const Dashboard = () => {
         <h3 className="text-lg sm:text-xl font-bold text-blue-400 mb-3 sm:mb-4">
           آخرین فاکتورها
         </h3>
+        {errorMessage && (
+          <div className="bg-red-500/10 border border-red-500 text-red-300 text-sm rounded-lg p-3 text-right mb-4">
+            {errorMessage}
+          </div>
+        )}
         <div className="space-y-2 sm:space-y-3">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
@@ -147,8 +157,8 @@ export const Dashboard = () => {
                 اولین فاکتور خود را ایجاد کنید
               </p>
             </div>
-          ) : (
-            recentInvoices.map((inv: Invoice) => {
+            ) : (
+              recentInvoices.map((inv: InvoiceWithMeta) => {
               const subtotal = inv.services.reduce(
                 (s: number, service: Service) =>
                   s + service.price * service.quantity,
