@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   InvoiceActions,
   InvoiceForm,
@@ -12,14 +12,45 @@ import {
   InvoiceHistory,
 } from '@/features';
 import { FileText, Home, History } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { View } from '@/types/type';
+import { useAuthStore } from '@/store/use-auth-store';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui';
 
 export default function InvoicePage() {
   const [currentView, setCurrentView] = useState<View>('invoice');
   const [showPreview, setShowPreview] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const { invoice } = useInvoiceStore();
+  const router = useRouter();
+  const { user, logout, checkSession, initialized, loading } = useAuthStore(
+    useShallow((state) => ({
+      user: state.user,
+      logout: state.logout,
+      checkSession: state.checkSession,
+      initialized: state.initialized,
+      loading: state.loading,
+    }))
+  );
+
+  useEffect(() => {
+    if (!initialized) {
+      checkSession();
+    }
+  }, [initialized, checkSession]);
+
+  useEffect(() => {
+    if (initialized && !loading && !user) {
+      router.replace('/login');
+    }
+  }, [initialized, loading, user, router]);
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
+  };
 
   const handlePrint = () => {
     window.print();
@@ -104,6 +135,16 @@ export default function InvoicePage() {
                   <History size={14} className="sm:w-4 sm:h-4" />
                   <span className="whitespace-nowrap">تاریخچه</span>
                 </button>
+                {user && (
+                  <Button
+                    variant="outline"
+                    color="red"
+                    onClick={handleLogout}
+                    className="text-xs sm:text-sm md:text-base"
+                  >
+                    خروج ({user.username})
+                  </Button>
+                )}
               </div>
             </div>
           </div>
