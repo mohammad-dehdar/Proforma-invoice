@@ -18,8 +18,9 @@ interface InvoiceStore {
 const createDefaultInvoice = (): Invoice => {
   const defaultCard = companyCards.find(card => card.isDefault) || companyCards[0];
   const detectedBankName = detectBankFromCardNumber(defaultCard.cardNumber) || '';
-  
+
   return {
+    _id: undefined,
     number: '',
     date: new Date().toLocaleDateString('fa-IR'),
     customer: {
@@ -37,7 +38,7 @@ const createDefaultInvoice = (): Invoice => {
     },
     discount: 0,
     tax: 9,
-    notes: ''
+      notes: ''
   };
 };
 

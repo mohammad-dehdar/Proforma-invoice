@@ -1,37 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Proforma Invoice Management
 
-## Getting Started
+سیستم مدیریت پیش‌فاکتور ساخته شده با Next.js که شامل احراز هویت، داشبورد تحلیلی و ذخیره‌سازی داده‌ها در MongoDB است.
 
-First, run the development server:
+## پیش‌نیازها
+
+- Node.js 18 یا جدیدتر
+- حساب MongoDB Atlas یا یک سرور MongoDB در دسترس
+
+## پیکربندی محیطی
+
+یک فایل `.env` بر اساس `.env.example` بسازید و مقادیر زیر را تنظیم کنید:
+
+```env
+MONGODB_URI=...             # رشته اتصال به پایگاه داده
+MONGODB_DB=proforma_invoice # نام دیتابیس دلخواه
+JWT_SECRET=...              # عبارت امن برای امضای توکن‌ها
+AUTH_DEFAULT_USERNAME=...   # نام کاربری پیش‌فرض برای ورود اولیه
+AUTH_DEFAULT_PASSWORD=...   # رمز عبور پیش‌فرض
+```
+
+> با اولین تلاش برای ورود، در صورت نبود کاربر در پایگاه داده، کاربری با مقادیر `AUTH_DEFAULT_USERNAME` و `AUTH_DEFAULT_PASSWORD` ایجاد می‌شود.
+
+## نصب وابستگی‌ها
+
+```bash
+npm install
+```
+
+## اجرای محیط توسعه
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+سپس به آدرس [http://localhost:3000](http://localhost:3000) بروید و با نام کاربری و رمز عبور تنظیم شده وارد شوید.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ویژگی‌ها
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- احراز هویت مبتنی بر کوکی با زمان انقضای ۷ روزه
+- ذخیره‌سازی فاکتورها در MongoDB به همراه تاریخ ایجاد و بروزرسانی
+- داشبورد آماری شامل تعداد فاکتورها، درآمد کل، مشتریان یکتا و فاکتورهای ماه جاری
+- تاریخچه فاکتورها با قابلیت ویرایش و حذف
+- همگام‌سازی فوری داشبورد و تاریخچه پس از ایجاد، ویرایش یا حذف فاکتور
 
-## Learn More
+## تست و بررسی
 
-To learn more about Next.js, take a look at the following resources:
+در صورت افزودن تست‌ها یا بررسی‌های بیشتر می‌توانید از اسکریپت‌های زیر استفاده کنید:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run lint
+npm test
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## استقرار
 
-## Deploy on Vercel
+برای استقرار، متغیرهای محیطی را در سرویس مقصد تنظیم کرده و دستور زیر را اجرا کنید:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build
+npm start
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-"# Proforma-invoice" 
+> اطمینان حاصل کنید که اتصال به MongoDB از محیط استقرار مجاز است.

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { TrendingUp, Users, FileText, DollarSign } from 'lucide-react';
 import { StatCard } from '@ui/StatCard';
 import { formatPrice, formatNumber, calculateTotal } from '@/utils/formatter';
 import { Invoice, Service } from '@/types/type';
+import { useRouter } from 'next/navigation';
 
 export const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -15,70 +16,50 @@ export const Dashboard = () => {
   });
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  const loadStats = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/dashboard', { credentials: 'include' });
+
+      if (response.status === 401) {
+        router.replace('/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('خطا در بارگذاری داشبورد');
+      }
+
+      const data = await response.json();
+      setStats(data.stats);
+      setRecentInvoices(data.recentInvoices || []);
+      setError(null);
+    } catch (err) {
+      console.error('خطا در بارگذاری آمار داشبورد:', err);
+      setError('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router]);
 
   useEffect(() => {
-    const loadStats = () => {
-      setIsLoading(true);
-
-      try {
-        // بررسی دسترسی به localStorage
-        if (typeof window === 'undefined') {
-          return;
-        }
-
-        const history: Invoice[] = JSON.parse(
-          localStorage.getItem('invoice-history') || '[]'
-        );
-
-        // محاسبه کل درآمد
-        const total = history.reduce((sum: number, inv: Invoice) => {
-          const subtotal = inv.services.reduce(
-            (s: number, service: Service) =>
-              s + service.price * service.quantity,
-            0
-          );
-          return sum + calculateTotal(subtotal, inv.discount, inv.tax);
-        }, 0);
-
-        // محاسبه فاکتورهای ماه جاری
-        const now = new Date();
-        const thisMonthCount = history.filter((inv: Invoice) => {
-          const parts = inv.date.split('/');
-          if (parts.length === 3) {
-            const invMonth = parseInt(parts[1]);
-            return invMonth === now.getMonth() + 1;
-          }
-          return false;
-        }).length;
-
-        // تعداد مشتریان منحصر به فرد
-        const uniqueCustomers = new Set(
-          history.map((inv: Invoice) => inv.customer.name)
-        ).size;
-
-        setStats({
-          totalInvoices: history.length,
-          totalRevenue: total,
-          totalCustomers: uniqueCustomers,
-          thisMonth: thisMonthCount,
-        });
-
-        // آخرین فاکتورها
-        setRecentInvoices(history.slice(-5).reverse());
-      } catch (error) {
-        console.error('خطا در بارگذاری آمار داشبورد:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadStats();
 
-    // بروزرسانی هر 30 ثانیه
     const interval = setInterval(loadStats, 30000);
+    const refreshHandler = () => loadStats();
 
-    return () => clearInterval(interval);
-  }, []);
+    window.addEventListener('invoice:saved', refreshHandler);
+    window.addEventListener('invoice:deleted', refreshHandler);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('invoice:saved', refreshHandler);
+      window.removeEventListener('invoice:deleted', refreshHandler);
+    };
+  }, [loadStats]);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -90,6 +71,12 @@ export const Dashboard = () => {
           </p>
         )}
       </div>
+
+      {error && (
+        <div className="bg-red-900/20 border border-red-500 text-red-200 text-sm rounded-lg p-3">
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
@@ -148,7 +135,7 @@ export const Dashboard = () => {
               </p>
             </div>
           ) : (
-            recentInvoices.map((inv: Invoice) => {
+            recentInvoices.map((inv: Invoice, index: number) => {
               const subtotal = inv.services.reduce(
                 (s: number, service: Service) =>
                   s + service.price * service.quantity,
@@ -158,7 +145,7 @@ export const Dashboard = () => {
 
               return (
                 <div
-                  key={inv.number}
+                  key={inv._id ?? `${inv.number}-${index}`}
                   className="bg-gray-700 rounded-lg p-3 sm:p-4 hover:bg-gray-600 transition-colors"
                 >
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
