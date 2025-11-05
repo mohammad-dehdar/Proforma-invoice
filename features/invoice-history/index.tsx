@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { FileText, Trash2, Eye } from 'lucide-react';
 import { formatPrice, formatNumber } from '@/utils/formatter';
-import { Invoice } from '@/types/type';
+import { Invoice, StoredInvoice } from '@/types/type';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { Modal, Button } from '@/components/ui';
 
@@ -12,36 +12,64 @@ interface InvoiceHistoryProps {
 }
 
 export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => {
-    const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [invoices, setInvoices] = useState<StoredInvoice[]>([]);
     const { loadInvoice } = useInvoiceStore();
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<null | string>(null);
     const [infoModal, setInfoModal] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchInvoices = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await fetch('/api/invoices', {
+                method: 'GET',
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({ message: 'خطا در دریافت تاریخچه فاکتورها.' }));
+                throw new Error(data.message || 'خطا در دریافت تاریخچه فاکتورها.');
+            }
+
+            const data = await response.json();
+            setInvoices(data.invoices || []);
+        } catch (err) {
+            console.error('Error loading invoice history:', err);
+            const message = err instanceof Error ? err.message : 'خطا در دریافت تاریخچه فاکتورها.';
+            setError(message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
-        const loadHistory = () => {
-            try {
-                const history = JSON.parse(localStorage.getItem('invoice-history') || '[]');
-                setInvoices([...history].reverse()); // Show newest first
-            } catch (error) {
-                console.error('Error loading invoice history:', error);
-            }
-        };
-        loadHistory();
-    }, []);
+        fetchInvoices();
+    }, [fetchInvoices]);
 
     const handleDelete = (invoiceNumber: string) => {
         setConfirmDeleteOpen(invoiceNumber);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (!confirmDeleteOpen) return;
         try {
-            const history = JSON.parse(localStorage.getItem('invoice-history') || '[]');
-            const updated = history.filter((inv: Invoice) => inv.number !== confirmDeleteOpen);
-            localStorage.setItem('invoice-history', JSON.stringify(updated));
-            setInvoices(updated.reverse());
-        } catch (error) {
-            console.error('Error deleting invoice:', error);
+            const response = await fetch(`/api/invoices/${encodeURIComponent(confirmDeleteOpen)}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({ message: 'خطا در حذف فاکتور.' }));
+                throw new Error(data.message || 'خطا در حذف فاکتور.');
+            }
+
+            await fetchInvoices();
+        } catch (err) {
+            console.error('Error deleting invoice:', err);
+            const message = err instanceof Error ? err.message : 'خطا در حذف فاکتور.';
+            setError(message);
         } finally {
             setConfirmDeleteOpen(null);
         }
@@ -58,6 +86,16 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
         return afterDiscount + tax;
     };
 
+    const loadInvoiceForEditing = (invoice: StoredInvoice) => {
+        const { _id, createdAt, updatedAt, createdBy, updatedBy, ...rest } = invoice;
+        void _id;
+        void createdAt;
+        void updatedAt;
+        void createdBy;
+        void updatedBy;
+        loadInvoice(rest);
+    };
+
     return (
         <>
             <div className="space-y-4 sm:space-y-6">
@@ -68,7 +106,16 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                     </p>
                 </div>
 
-                {invoices.length === 0 ? (
+                {isLoading ? (
+                    <div className="bg-gray-800 rounded-lg p-8 sm:p-12 text-center">
+                        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                        <p className="text-gray-400 text-base sm:text-lg mt-4">در حال بارگذاری تاریخچه...</p>
+                    </div>
+                ) : error ? (
+                    <div className="bg-red-900/20 border border-red-500 rounded-lg p-6 text-center text-red-200">
+                        {error}
+                    </div>
+                ) : invoices.length === 0 ? (
                     <div className="bg-gray-800 rounded-lg p-8 sm:p-12 text-center">
                         <FileText size={40} className="sm:w-12 sm:h-12 mx-auto text-gray-600 mb-3 sm:mb-4" />
                         <p className="text-gray-400 text-base sm:text-lg">هنوز فاکتوری ثبت نشده است</p>
@@ -137,7 +184,7 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                                         <div className="flex gap-2 sm:mr-4 shrink-0 self-start sm:self-center">
                                             <button
                                                 onClick={() => {
-                                                    loadInvoice(invoice);
+                                                    loadInvoiceForEditing(invoice);
                                                     if (onNavigateToInvoice) {
                                                         onNavigateToInvoice();
                                                     } else {

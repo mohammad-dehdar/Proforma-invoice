@@ -6,3 +6,4 @@ export * from './discount-tax';
 export * from './invoice-history';
 export * from './dashboard';
 export * from './email-modal';
+export * from './auth/login-form';

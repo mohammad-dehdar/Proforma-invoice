@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Check, X, Edit2, Trash2, FileText } from 'lucide-react';
+import { Plus, Check, X, Edit2, Trash2 } from 'lucide-react';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { formatPrice, parsePrice, formatNumber } from '@/utils/formatter';
 import { Service } from '@/types/type';
 import { Input, Label, Button } from '@/components/ui';
 
 export const ServiceList = () => {
-  const { invoice, addService, editService, removeService, setInvoice } = useInvoiceStore();
+  const { invoice, addService, editService, removeService } = useInvoiceStore();
   const [currentService, setCurrentService] = useState<Service>({
     id: 0,
     description: '',

@@ -4,69 +4,43 @@ import { useEffect, useState } from 'react';
 import { TrendingUp, Users, FileText, DollarSign } from 'lucide-react';
 import { StatCard } from '@ui/StatCard';
 import { formatPrice, formatNumber, calculateTotal } from '@/utils/formatter';
-import { Invoice, Service } from '@/types/type';
+import { StoredInvoice, DashboardStats } from '@/types/type';
 
 export const Dashboard = () => {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     totalInvoices: 0,
     totalRevenue: 0,
     totalCustomers: 0,
     thisMonth: 0,
+    recentInvoices: [],
   });
-  const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
+  const [recentInvoices, setRecentInvoices] = useState<StoredInvoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadStats = () => {
+    const loadStats = async () => {
       setIsLoading(true);
+      setError(null);
 
       try {
-        // بررسی دسترسی به localStorage
-        if (typeof window === 'undefined') {
-          return;
-        }
-
-        const history: Invoice[] = JSON.parse(
-          localStorage.getItem('invoice-history') || '[]'
-        );
-
-        // محاسبه کل درآمد
-        const total = history.reduce((sum: number, inv: Invoice) => {
-          const subtotal = inv.services.reduce(
-            (s: number, service: Service) =>
-              s + service.price * service.quantity,
-            0
-          );
-          return sum + calculateTotal(subtotal, inv.discount, inv.tax);
-        }, 0);
-
-        // محاسبه فاکتورهای ماه جاری
-        const now = new Date();
-        const thisMonthCount = history.filter((inv: Invoice) => {
-          const parts = inv.date.split('/');
-          if (parts.length === 3) {
-            const invMonth = parseInt(parts[1]);
-            return invMonth === now.getMonth() + 1;
-          }
-          return false;
-        }).length;
-
-        // تعداد مشتریان منحصر به فرد
-        const uniqueCustomers = new Set(
-          history.map((inv: Invoice) => inv.customer.name)
-        ).size;
-
-        setStats({
-          totalInvoices: history.length,
-          totalRevenue: total,
-          totalCustomers: uniqueCustomers,
-          thisMonth: thisMonthCount,
+        const response = await fetch('/api/invoices/stats', {
+          method: 'GET',
+          credentials: 'include',
         });
 
-        // آخرین فاکتورها
-        setRecentInvoices(history.slice(-5).reverse());
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: 'خطا در بارگذاری آمار داشبورد.' }));
+          throw new Error(data.message || 'خطا در بارگذاری آمار داشبورد.');
+        }
+
+        const data = await response.json();
+        setStats(data.stats);
+        setRecentInvoices(data.stats.recentInvoices || []);
       } catch (error) {
         console.error('خطا در بارگذاری آمار داشبورد:', error);
+        const message = error instanceof Error ? error.message : 'خطا در بارگذاری آمار داشبورد.';
+        setError(message);
       } finally {
         setIsLoading(false);
       }
@@ -137,6 +111,10 @@ export const Dashboard = () => {
                 <div className="h-3 sm:h-4 bg-gray-600 rounded w-1/2"></div>
               </div>
             ))
+          ) : error ? (
+            <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 text-sm text-red-200 text-center">
+              {error}
+            </div>
           ) : recentInvoices.length === 0 ? (
             <div className="text-center py-8 sm:py-12">
               <FileText size={40} className="sm:w-12 sm:h-12 mx-auto text-gray-600 mb-3 sm:mb-4" />
@@ -148,9 +126,9 @@ export const Dashboard = () => {
               </p>
             </div>
           ) : (
-            recentInvoices.map((inv: Invoice) => {
+            recentInvoices.map((inv) => {
               const subtotal = inv.services.reduce(
-                (s: number, service: Service) =>
+                (s, service) =>
                   s + service.price * service.quantity,
                 0
               );

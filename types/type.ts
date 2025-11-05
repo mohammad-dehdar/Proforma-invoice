@@ -31,6 +31,22 @@ export type Invoice = {
   notes?: string;
 };
 
+export type StoredInvoice = Invoice & {
+  _id?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy?: string;
+};
+
+export type DashboardStats = {
+  totalInvoices: number;
+  totalRevenue: number;
+  totalCustomers: number;
+  thisMonth: number;
+  recentInvoices: StoredInvoice[];
+};
+
 // تایپ‌های validation
 export type ValidationError = {
   field: string;

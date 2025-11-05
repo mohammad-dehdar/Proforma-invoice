@@ -17,7 +17,7 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
   const [errorModal, setErrorModal] = useState<string | null>(null);
   const [successModal, setSuccessModal] = useState<string | null>(null);
   const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
-  const [pendingExistingIndex, setPendingExistingIndex] = useState<number | null>(null);
+  const [conflictingInvoiceNumber, setConflictingInvoiceNumber] = useState<string | null>(null);
 
   const validation = validateInvoice(invoice);
 
@@ -31,68 +31,68 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
     setIsSaving(true);
 
     try {
-      // بررسی دسترسی به localStorage
-      if (typeof window === 'undefined') {
-        throw new Error('localStorage در دسترس نیست');
-      }
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ invoice }),
+      });
 
-      const history = JSON.parse(
-        localStorage.getItem('invoice-history') || '[]'
-      );
-
-      // بررسی تکراری نبودن شماره فاکتور
-      const existingIndex = history.findIndex(
-        (inv: typeof invoice) => inv.number === invoice.number
-      );
-
-      if (existingIndex !== -1) {
-        // Show confirm modal and wait for user's choice via stateful flow
-        setPendingExistingIndex(existingIndex);
+      if (response.status === 409) {
+        setConflictingInvoiceNumber(invoice.number);
         setConfirmReplaceOpen(true);
-        return; // stop here; confirm handler continues the save
-      } else {
-        // اضافه کردن فاکتور جدید
-        history.push({
-          ...invoice,
-          createdAt: new Date().toISOString(),
-        });
+        return;
       }
 
-      localStorage.setItem('invoice-history', JSON.stringify(history));
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({ message: 'خطایی رخ داده است.' }));
+        throw new Error(data.message || 'خطا در ذخیره فاکتور');
+      }
 
-      // نمایش پیام موفقیت
       setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
     } catch (error) {
       console.error('خطا در ذخیره فاکتور:', error);
-      setErrorModal('❌ خطا در ذخیره فاکتور! لطفاً دوباره تلاش کنید.');
+      const message = error instanceof Error ? error.message : '❌ خطا در ذخیره فاکتور! لطفاً دوباره تلاش کنید.';
+      setErrorModal(message);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleConfirmReplace = () => {
-    try {
-      if (typeof window === 'undefined') {
-        throw new Error('localStorage در دسترس نیست');
+    const replaceInvoice = async () => {
+      if (!conflictingInvoiceNumber) return;
+      setIsSaving(true);
+      try {
+        const response = await fetch(`/api/invoices/${encodeURIComponent(conflictingInvoiceNumber)}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ invoice }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({ message: 'خطایی رخ داده است.' }));
+          throw new Error(data.message || 'خطا در ذخیره فاکتور');
+        }
+
+        setSuccessModal('✅ فاکتور با موفقیت بروزرسانی شد!');
+      } catch (error) {
+        console.error('خطا در ذخیره فاکتور:', error);
+        const message = error instanceof Error ? error.message : '❌ خطا در ذخیره فاکتور! لطفاً دوباره تلاش کنید.';
+        setErrorModal(message);
+      } finally {
+        setIsSaving(false);
+        setConfirmReplaceOpen(false);
+        setConflictingInvoiceNumber(null);
       }
-      const history = JSON.parse(
-        localStorage.getItem('invoice-history') || '[]'
-      );
-      if (pendingExistingIndex === null) return;
-      history[pendingExistingIndex] = {
-        ...invoice,
-        updatedAt: new Date().toISOString(),
-      };
-      localStorage.setItem('invoice-history', JSON.stringify(history));
-      setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
-    } catch (error) {
-      console.error('خطا در ذخیره فاکتور:', error);
-      setErrorModal('❌ خطا در ذخیره فاکتور! لطفاً دوباره تلاش کنید.');
-    } finally {
-      setConfirmReplaceOpen(false);
-      setPendingExistingIndex(null);
-      setIsSaving(false);
-    }
+    };
+
+    replaceInvoice();
   };
 
   const handlePreview = () => {
@@ -202,6 +202,7 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
         onClose={() => {
           setConfirmReplaceOpen(false);
           setIsSaving(false);
+          setConflictingInvoiceNumber(null);
         }}
         title="جایگزینی فاکتور"
         size="md"
@@ -212,7 +213,7 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
               onClick={() => {
                 setConfirmReplaceOpen(false);
                 setIsSaving(false);
-                setPendingExistingIndex(null);
+                setConflictingInvoiceNumber(null);
               }}
             >
               انصراف
@@ -220,6 +221,7 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
             <Button
               variant="primary"
               onClick={handleConfirmReplace}
+              disabled={isSaving}
             >
               جایگزین کن
             </Button>
