@@ -12,14 +12,46 @@ interface InvoiceActionsProps {
 }
 
 export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
-  const { invoice } = useInvoiceStore();
+  const { invoice, setInvoice } = useInvoiceStore();
   const [isSaving, setIsSaving] = useState(false);
   const [errorModal, setErrorModal] = useState<string | null>(null);
   const [successModal, setSuccessModal] = useState<string | null>(null);
   const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
-  const [pendingExistingIndex, setPendingExistingIndex] = useState<number | null>(null);
+  const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
 
   const validation = validateInvoice(invoice);
+
+  const saveInvoice = async (url: string, method: 'POST' | 'PUT') => {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(invoice),
+    });
+
+    if (response.status === 401) {
+      window.location.href = '/login';
+      return null;
+    }
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.message || 'failed_to_save');
+    }
+
+    const data = await response.json();
+
+    if (data.invoice?.id) {
+      setInvoice({
+        id: data.invoice.id,
+        createdAt: data.invoice.createdAt,
+        updatedAt: data.invoice.updatedAt,
+      });
+    }
+
+    return data;
+  };
 
   const handleSave = async () => {
     if (!validation.isValid) {
@@ -31,36 +63,54 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
     setIsSaving(true);
 
     try {
-      // بررسی دسترسی به localStorage
-      if (typeof window === 'undefined') {
-        throw new Error('localStorage در دسترس نیست');
+      if (invoice.id) {
+        const result = await saveInvoice(`/api/invoices/${invoice.id}`, 'PUT');
+        if (result) {
+          setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
+        }
+        return;
       }
 
-      const history = JSON.parse(
-        localStorage.getItem('invoice-history') || '[]'
-      );
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invoice),
+      });
 
-      // بررسی تکراری نبودن شماره فاکتور
-      const existingIndex = history.findIndex(
-        (inv: typeof invoice) => inv.number === invoice.number
-      );
+      if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+      }
 
-      if (existingIndex !== -1) {
-        // Show confirm modal and wait for user's choice via stateful flow
-        setPendingExistingIndex(existingIndex);
-        setConfirmReplaceOpen(true);
-        return; // stop here; confirm handler continues the save
-      } else {
-        // اضافه کردن فاکتور جدید
-        history.push({
-          ...invoice,
-          createdAt: new Date().toISOString(),
+      if (response.status === 409) {
+        const data = await response.json().catch(() => ({}));
+        const existingId = data.invoiceId || null;
+        if (existingId) {
+          setPendingInvoiceId(existingId);
+          setConfirmReplaceOpen(true);
+        } else {
+          setErrorModal('فاکتوری با این شماره وجود دارد. لطفاً شماره دیگری انتخاب کنید.');
+        }
+        return;
+      }
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || 'failed_to_save');
+      }
+
+      const data = await response.json();
+
+      if (data.invoice?.id) {
+        setInvoice({
+          id: data.invoice.id,
+          createdAt: data.invoice.createdAt,
+          updatedAt: data.invoice.updatedAt,
         });
       }
 
-      localStorage.setItem('invoice-history', JSON.stringify(history));
-
-      // نمایش پیام موفقیت
       setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
     } catch (error) {
       console.error('خطا در ذخیره فاکتور:', error);
@@ -70,27 +120,25 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
     }
   };
 
-  const handleConfirmReplace = () => {
+  const handleConfirmReplace = async () => {
+    if (!pendingInvoiceId) {
+      setConfirmReplaceOpen(false);
+      return;
+    }
+
+    setIsSaving(true);
+
     try {
-      if (typeof window === 'undefined') {
-        throw new Error('localStorage در دسترس نیست');
+      const result = await saveInvoice(`/api/invoices/${pendingInvoiceId}`, 'PUT');
+      if (result) {
+        setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
       }
-      const history = JSON.parse(
-        localStorage.getItem('invoice-history') || '[]'
-      );
-      if (pendingExistingIndex === null) return;
-      history[pendingExistingIndex] = {
-        ...invoice,
-        updatedAt: new Date().toISOString(),
-      };
-      localStorage.setItem('invoice-history', JSON.stringify(history));
-      setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
     } catch (error) {
       console.error('خطا در ذخیره فاکتور:', error);
       setErrorModal('❌ خطا در ذخیره فاکتور! لطفاً دوباره تلاش کنید.');
     } finally {
       setConfirmReplaceOpen(false);
-      setPendingExistingIndex(null);
+      setPendingInvoiceId(null);
       setIsSaving(false);
     }
   };
@@ -212,7 +260,7 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
               onClick={() => {
                 setConfirmReplaceOpen(false);
                 setIsSaving(false);
-                setPendingExistingIndex(null);
+                setPendingInvoiceId(null);
               }}
             >
               انصراف
@@ -227,7 +275,8 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
         }
       >
         <p className="text-sm">
-          فاکتور با این شماره قبلاً ذخیره شده است. آیا می‌خواهید آن را جایگزین کنید؟
+          فاکتور با شماره <span className="font-semibold">{invoice.number}</span> قبلاً ذخیره شده است.
+          آیا می‌خواهید آن را جایگزین کنید؟
         </p>
       </Modal>
     </>

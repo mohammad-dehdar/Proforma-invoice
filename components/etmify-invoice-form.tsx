@@ -14,15 +14,44 @@ import {
 import { FileText, Home, History } from 'lucide-react';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { View } from '@/types/type';
+import { Button, Modal } from '@/components/ui';
 
-export default function InvoicePage() {
+type InvoicePageProps = {
+  username: string;
+};
+
+export default function InvoicePage({ username }: InvoicePageProps) {
   const [currentView, setCurrentView] = useState<View>('invoice');
   const [showPreview, setShowPreview] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const { invoice } = useInvoiceStore();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    setLogoutError(null);
+
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('logout_failed');
+      }
+
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout failed', error);
+      setLogoutError('خروج از سیستم با مشکل مواجه شد. لطفاً دوباره تلاش کنید.');
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const renderView = () => {
@@ -66,10 +95,28 @@ export default function InvoicePage() {
         {/* Navigation Header */}
         {!showPreview && (
           <div className="bg-gray-800 rounded-lg shadow-2xl p-3 sm:p-4 mb-4 sm:mb-6">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-blue-400 text-center sm:text-right w-full sm:w-auto">
-                ETMIFY - سیستم پیش‌فاکتور
-              </h1>
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-blue-400 text-center sm:text-right w-full sm:w-auto">
+                  ETMIFY - سیستم پیش‌فاکتور
+                </h1>
+                <div className="flex flex-wrap gap-2 items-center justify-center sm:justify-end w-full sm:w-auto">
+                  <span className="text-xs sm:text-sm text-gray-300">
+                    خوش آمدید، <span className="font-semibold text-white">{username}</span>
+                  </span>
+                  <Button
+                    variant="outline"
+                    color="red"
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    size="sm"
+                    className="text-xs sm:text-sm"
+                    type="button"
+                  >
+                    {isLoggingOut ? 'در حال خروج...' : 'خروج'}
+                  </Button>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2 sm:gap-3 justify-center sm:justify-end w-full sm:w-auto">
                 <button
                   onClick={() => setCurrentView('invoice')}
@@ -119,6 +166,20 @@ export default function InvoicePage() {
           invoiceNumber={invoice.number}
         />
       </div>
+
+      <Modal
+        isOpen={!!logoutError}
+        onClose={() => setLogoutError(null)}
+        title="خطا"
+        size="sm"
+        footer={
+          <Button variant="primary" onClick={() => setLogoutError(null)}>
+            متوجه شدم
+          </Button>
+        }
+      >
+        <p className="text-sm leading-6">{logoutError}</p>
+      </Modal>
     </div>
   );
 }

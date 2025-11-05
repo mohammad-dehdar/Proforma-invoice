@@ -17,67 +17,51 @@ export const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadStats = () => {
+    let isMounted = true;
+
+    const loadStats = async () => {
       setIsLoading(true);
 
       try {
-        // بررسی دسترسی به localStorage
-        if (typeof window === 'undefined') {
+        const response = await fetch('/api/dashboard');
+
+        if (response.status === 401) {
+          window.location.href = '/login';
           return;
         }
 
-        const history: Invoice[] = JSON.parse(
-          localStorage.getItem('invoice-history') || '[]'
-        );
+        if (!response.ok) {
+          throw new Error('failed_to_load');
+        }
 
-        // محاسبه کل درآمد
-        const total = history.reduce((sum: number, inv: Invoice) => {
-          const subtotal = inv.services.reduce(
-            (s: number, service: Service) =>
-              s + service.price * service.quantity,
-            0
-          );
-          return sum + calculateTotal(subtotal, inv.discount, inv.tax);
-        }, 0);
+        const data = await response.json();
 
-        // محاسبه فاکتورهای ماه جاری
-        const now = new Date();
-        const thisMonthCount = history.filter((inv: Invoice) => {
-          const parts = inv.date.split('/');
-          if (parts.length === 3) {
-            const invMonth = parseInt(parts[1]);
-            return invMonth === now.getMonth() + 1;
-          }
-          return false;
-        }).length;
-
-        // تعداد مشتریان منحصر به فرد
-        const uniqueCustomers = new Set(
-          history.map((inv: Invoice) => inv.customer.name)
-        ).size;
+        if (!isMounted) return;
 
         setStats({
-          totalInvoices: history.length,
-          totalRevenue: total,
-          totalCustomers: uniqueCustomers,
-          thisMonth: thisMonthCount,
+          totalInvoices: data.stats?.totalInvoices ?? 0,
+          totalRevenue: data.stats?.totalRevenue ?? 0,
+          totalCustomers: data.stats?.totalCustomers ?? 0,
+          thisMonth: data.stats?.thisMonth ?? 0,
         });
-
-        // آخرین فاکتورها
-        setRecentInvoices(history.slice(-5).reverse());
+        setRecentInvoices(data.recentInvoices ?? []);
       } catch (error) {
         console.error('خطا در بارگذاری آمار داشبورد:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadStats();
 
-    // بروزرسانی هر 30 ثانیه
     const interval = setInterval(loadStats, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   return (
@@ -158,7 +142,7 @@ export const Dashboard = () => {
 
               return (
                 <div
-                  key={inv.number}
+                  key={inv.id ?? inv.number}
                   className="bg-gray-700 rounded-lg p-3 sm:p-4 hover:bg-gray-600 transition-colors"
                 >
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">

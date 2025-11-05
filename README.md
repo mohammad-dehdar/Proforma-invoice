@@ -1,37 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Proforma Invoice Manager
 
-## Getting Started
+سیستم مدیریت پیش‌فاکتور مبتنی بر Next.js که اکنون شامل بک‌اند کامل برای مدیریت کاربران، احراز هویت و ذخیره‌سازی اطلاعات در MongoDB است. این برنامه به شما اجازه می‌دهد فاکتورها را ایجاد، ویرایش و حذف کنید و داشبورد و تاریخچه را به صورت زنده از پایگاه داده دریافت نمایید.
 
-First, run the development server:
+## پیش‌نیازها
+
+- Node.js نسخه 18 یا بالاتر
+- دسترسی به یک پایگاه داده MongoDB (سازگار با MongoDB Atlas)
+
+## راه‌اندازی
+
+1. وابستگی‌ها را نصب کنید:
+
+```bash
+npm install
+```
+
+2. متغیرهای محیطی را در یک فایل `.env.local` تنظیم کنید:
+
+```bash
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/?appName=Cluster0
+MONGODB_DB=proforma-invoice   # اختیاری، مقدار پیش‌فرض همین است
+JWT_SECRET=یک_رشته_قوی_برای_امضا
+```
+
+> **نکته:** از یک رشته تصادفی و طولانی برای `JWT_SECRET` استفاده کنید.
+
+3. ایجاد کاربر اولیه:
+
+```bash
+npm run seed-user -- <username> <password>
+```
+
+این دستور اگر کاربری با نام کاربری مشخص وجود نداشته باشد، او را ایجاد می‌کند و در غیر این صورت رمز عبور او را به‌روزرسانی خواهد کرد. می‌توانید به جای ارسال آرگومان‌ها، متغیرهای `ADMIN_USERNAME` و `ADMIN_PASSWORD` را در محیط تنظیم کنید.
+
+## اجرای پروژه
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+سپس برنامه را در آدرس [http://localhost:3000](http://localhost:3000) باز کنید. پس از ورود با حسابی که ساخته‌اید، می‌توانید فاکتورهای جدید ایجاد کنید، آن‌ها را در پایگاه داده ذخیره نمایید و از داشبورد و تاریخچه استفاده کنید.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## API
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+بک‌اند مجموعه‌ای از API‌های زیر را فراهم می‌کند (تمامی آن‌ها نیاز به احراز هویت دارند مگر آن‌که خلافش ذکر شده باشد):
 
-## Learn More
+- `POST /api/auth/login` – ورود و دریافت کوکی نشست
+- `POST /api/auth/logout` – خروج و پاک‌سازی نشست
+- `GET /api/auth/session` – بررسی وضعیت نشست کاربر
+- `GET /api/invoices` – دریافت فاکتورها
+- `POST /api/invoices` – ایجاد فاکتور جدید
+- `PUT /api/invoices/:id` – بروزرسانی فاکتور
+- `DELETE /api/invoices/:id` – حذف فاکتور
+- `GET /api/dashboard` – دریافت آمار داشبورد و آخرین فاکتورها
 
-To learn more about Next.js, take a look at the following resources:
+## نکات امنیتی
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- کوکی نشست به صورت HTTP-Only و با امضای HMAC ذخیره می‌شود.
+- رمزهای عبور با استفاده از الگوریتم Scrypt همراه با Salt تصادفی در پایگاه داده ذخیره می‌شوند.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## تست و کد
 
-## Deploy on Vercel
+- `npm run lint` برای بررسی قواعد کدنویسی
+- `npm test` برای اجرای تست‌ها (در صورت وجود)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-"# Proforma-invoice" 
+لطفاً پیش از ارسال به محیط تولید، حتماً پیکربندی‌های امنیتی و مقادیر محیطی را بررسی کنید.

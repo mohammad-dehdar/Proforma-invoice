@@ -21,6 +21,7 @@ export type PaymentInfo = {
 };
 
 export type Invoice = {
+  id?: string;
   number: string;
   date: string;
   customer: Customer;
@@ -29,6 +30,8 @@ export type Invoice = {
   discount?: number;
   tax?: number;
   notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 // تایپ‌های validation

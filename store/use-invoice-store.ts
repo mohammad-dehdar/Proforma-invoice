@@ -20,6 +20,7 @@ const createDefaultInvoice = (): Invoice => {
   const detectedBankName = detectBankFromCardNumber(defaultCard.cardNumber) || '';
   
   return {
+    id: undefined,
     number: '',
     date: new Date().toLocaleDateString('fa-IR'),
     customer: {

@@ -16,32 +16,79 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
     const { loadInvoice } = useInvoiceStore();
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<null | string>(null);
     const [infoModal, setInfoModal] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const loadHistory = () => {
+        let isMounted = true;
+
+        const loadHistory = async () => {
+            setIsLoading(true);
+
             try {
-                const history = JSON.parse(localStorage.getItem('invoice-history') || '[]');
-                setInvoices([...history].reverse()); // Show newest first
+                const response = await fetch('/api/invoices');
+
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('failed_to_load');
+                }
+
+                const data = await response.json();
+
+                if (isMounted) {
+                    const list: Invoice[] = data.invoices ?? [];
+                    setInvoices(list);
+                }
             } catch (error) {
                 console.error('Error loading invoice history:', error);
+                if (isMounted) {
+                    setInfoModal('خطا در بارگذاری تاریخچه فاکتورها. لطفاً بعداً دوباره تلاش کنید.');
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             }
         };
+
         loadHistory();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
-    const handleDelete = (invoiceNumber: string) => {
-        setConfirmDeleteOpen(invoiceNumber);
+    const handleDelete = (invoiceId?: string) => {
+        if (!invoiceId) return;
+        setConfirmDeleteOpen(invoiceId);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (!confirmDeleteOpen) return;
+
         try {
-            const history = JSON.parse(localStorage.getItem('invoice-history') || '[]');
-            const updated = history.filter((inv: Invoice) => inv.number !== confirmDeleteOpen);
-            localStorage.setItem('invoice-history', JSON.stringify(updated));
-            setInvoices(updated.reverse());
+            const response = await fetch(`/api/invoices/${confirmDeleteOpen}`, {
+                method: 'DELETE',
+            });
+
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error('failed_to_delete');
+            }
+
+            setInvoices((current) =>
+                current.filter((invoice) => invoice.id !== confirmDeleteOpen)
+            );
         } catch (error) {
             console.error('Error deleting invoice:', error);
+            setInfoModal('حذف فاکتور با خطا مواجه شد. لطفاً دوباره تلاش کنید.');
         } finally {
             setConfirmDeleteOpen(null);
         }
@@ -58,6 +105,10 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
         return afterDiscount + tax;
     };
 
+    const selectedInvoice = confirmDeleteOpen
+        ? invoices.find((invoice) => invoice.id === confirmDeleteOpen)
+        : null;
+
     return (
         <>
             <div className="space-y-4 sm:space-y-6">
@@ -68,7 +119,19 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                     </p>
                 </div>
 
-                {invoices.length === 0 ? (
+                {isLoading ? (
+                    <div className="space-y-3 sm:space-y-4">
+                        {Array.from({ length: 3 }).map((_, index) => (
+                            <div
+                                key={index}
+                                className="bg-gray-800 rounded-lg p-4 sm:p-6 animate-pulse"
+                            >
+                                <div className="h-4 bg-gray-700 rounded w-1/3 mb-3"></div>
+                                <div className="h-3 bg-gray-700 rounded w-2/3"></div>
+                            </div>
+                        ))}
+                    </div>
+                ) : invoices.length === 0 ? (
                     <div className="bg-gray-800 rounded-lg p-8 sm:p-12 text-center">
                         <FileText size={40} className="sm:w-12 sm:h-12 mx-auto text-gray-600 mb-3 sm:mb-4" />
                         <p className="text-gray-400 text-base sm:text-lg">هنوز فاکتوری ثبت نشده است</p>
@@ -79,7 +142,7 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                             const total = calculateTotal(invoice);
                             return (
                                 <div
-                                    key={invoice.number}
+                                    key={invoice.id ?? invoice.number}
                                     className="bg-gray-800 rounded-lg p-4 sm:p-6 border-r-4 border-blue-500"
                                 >
                                     <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4">
@@ -134,28 +197,28 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex gap-2 sm:mr-4 shrink-0 self-start sm:self-center">
-                                            <button
-                                                onClick={() => {
-                                                    loadInvoice(invoice);
-                                                    if (onNavigateToInvoice) {
-                                                        onNavigateToInvoice();
-                                                    } else {
-                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                        setInfoModal('فاکتور بارگذاری شد. به بخش فاکتور جدید بروید.');
-                                                    }
-                                                }}
-                                                className="p-2 text-blue-400 hover:bg-blue-400/20 rounded-lg transition-colors"
-                                                title="بارگذاری و ویرایش"
-                                                type="button"
-                                            >
-                                                <Eye size={18} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(invoice.number)}
-                                                className="p-2 text-red-400 hover:bg-red-400/20 rounded-lg transition-colors"
-                                                title="حذف"
-                                                type="button"
+                                            <div className="flex gap-2 sm:mr-4 shrink-0 self-start sm:self-center">
+                                                <button
+                                                    onClick={() => {
+                                                        loadInvoice(invoice);
+                                                        if (onNavigateToInvoice) {
+                                                            onNavigateToInvoice();
+                                                        } else {
+                                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                            setInfoModal('فاکتور بارگذاری شد. به بخش فاکتور جدید بروید.');
+                                                        }
+                                                    }}
+                                                    className="p-2 text-blue-400 hover:bg-blue-400/20 rounded-lg transition-colors"
+                                                    title="بارگذاری و ویرایش"
+                                                    type="button"
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(invoice.id)}
+                                                    className="p-2 text-red-400 hover:bg-red-400/20 rounded-lg transition-colors"
+                                                    title="حذف"
+                                                    type="button"
                                             >
                                                 <Trash2 size={18} />
                                             </button>
@@ -200,7 +263,7 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                     </>
                 }
             >
-                <p className="text-sm">آیا از حذف فاکتور {confirmDeleteOpen || ''} مطمئن هستید؟</p>
+                <p className="text-sm">آیا از حذف فاکتور {selectedInvoice?.number || ''} مطمئن هستید؟</p>
             </Modal>
         </>
     );
