@@ -1,7 +1,7 @@
 'use client';
 
 import { useInvoiceStore } from '@/store/use-invoice-store';
-import { Input, Label } from '@/components/atoms';
+import { Input, Label } from '@/components/ui';
 import { Percent, FileText } from 'lucide-react';
 
 export const DiscountTax = () => {

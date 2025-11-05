@@ -10,7 +10,7 @@ import {
   DiscountTax,
   EmailModal,
   InvoiceHistory,
-} from './templates';
+} from '@/features';
 import { FileText, Home, History } from 'lucide-react';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { View } from '@/types/type';
@@ -73,11 +73,10 @@ export default function InvoicePage() {
               <div className="flex flex-wrap gap-2 sm:gap-3 justify-center sm:justify-end w-full sm:w-auto">
                 <button
                   onClick={() => setCurrentView('invoice')}
-                  className={`text-xs sm:text-sm md:text-base px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all flex-1 sm:flex-none min-w-[100px] sm:min-w-0 ${
-                    currentView === 'invoice'
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
+                  className={`text-xs sm:text-sm md:text-base px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all flex-1 sm:flex-none min-w-[100px] sm:min-w-0 ${currentView === 'invoice'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
                   type="button"
                 >
                   <FileText size={14} className="sm:w-4 sm:h-4" />
@@ -85,11 +84,10 @@ export default function InvoicePage() {
                 </button>
                 <button
                   onClick={() => setCurrentView('dashboard')}
-                  className={`text-xs sm:text-sm md:text-base px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all flex-1 sm:flex-none min-w-[100px] sm:min-w-0 ${
-                    currentView === 'dashboard'
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
+                  className={`text-xs sm:text-sm md:text-base px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all flex-1 sm:flex-none min-w-[100px] sm:min-w-0 ${currentView === 'dashboard'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
                   type="button"
                 >
                   <Home size={14} className="sm:w-4 sm:h-4" />
@@ -97,11 +95,10 @@ export default function InvoicePage() {
                 </button>
                 <button
                   onClick={() => setCurrentView('history')}
-                  className={`text-xs sm:text-sm md:text-base px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all flex-1 sm:flex-none min-w-[100px] sm:min-w-0 ${
-                    currentView === 'history'
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
+                  className={`text-xs sm:text-sm md:text-base px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-1.5 sm:gap-2 transition-all flex-1 sm:flex-none min-w-[100px] sm:min-w-0 ${currentView === 'history'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
                   type="button"
                 >
                   <History size={14} className="sm:w-4 sm:h-4" />
