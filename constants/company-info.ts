@@ -12,17 +12,14 @@ export const companyCards = [
     id: 1,
     cardNumber: "6037-7015-4909-9163",
     cardHolderName: "محسن قادری",
-    bankName: "بانک کشاورزی",
     iban: "IR020160000000000307454684", // ✅ شماره شبا اضافه شد
     isDefault: true,
   },
   {
     id: 2,
-    cardNumber: "6280-2311-0000-1234",
+    cardNumber: "6219-2311-0000-1234",
     cardHolderName: "شرکت اتمیفای",
-    bankName: "بانک سامان",
     iban: "IR000000000000000000000000", // شماره شبا نمونه
     isDefault: false,
   },
-  // می‌تونی کارت‌های بیشتری اضافه کنی
 ];

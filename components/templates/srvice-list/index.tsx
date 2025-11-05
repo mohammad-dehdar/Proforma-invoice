@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Check, X, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Check, X, Edit2, Trash2, FileText } from 'lucide-react';
 import { useInvoiceStore } from '@/store/use-invoice-store';
 import { formatPrice, parsePrice, formatNumber } from '@/utils/formatter';
 import { Service } from '@/types/type';
 import { Input, Label } from '@/components/atoms';
 
 export const ServiceList = () => {
-  const { invoice, addService, editService, removeService } = useInvoiceStore();
+  const { invoice, addService, editService, removeService, setInvoice } = useInvoiceStore();
   const [currentService, setCurrentService] = useState<Service>({
     id: 0,
     description: '',
@@ -144,6 +144,18 @@ export const ServiceList = () => {
               error={errors.price}
             />
           </div>
+        </div>
+        <div className="mt-3 sm:mt-4">
+          <Label>
+            <FileText className="inline ml-2" size={16} />
+            یادداشت‌های اضافی
+          </Label>
+          <textarea
+            value={invoice.notes || ''}
+            onChange={(e) => setInvoice({ notes: e.target.value })}
+            className="w-full bg-gray-700 text-white rounded px-3 py-2 sm:px-4 sm:py-2 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] sm:min-h-[100px] text-sm sm:text-base resize-y"
+            placeholder="توضیحات اضافی درباره خدمات یا فاکتور..."
+          />
         </div>
         <button
           onClick={handleAddService}

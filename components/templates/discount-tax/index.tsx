@@ -45,18 +45,7 @@ export const DiscountTax = () => {
                 </div>
             </div>
 
-            <div>
-                <Label>
-                    <FileText className="inline ml-2" size={16} />
-                    یادداشت‌های اضافی
-                </Label>
-                <textarea
-                    value={invoice.notes || ''}
-                    onChange={(e) => setInvoice({ notes: e.target.value })}
-                    className="w-full bg-gray-700 text-white rounded px-3 py-2 sm:px-4 sm:py-2 border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] sm:min-h-[100px] text-sm sm:text-base resize-y"
-                    placeholder="توضیحات اضافی درباره فاکتور..."
-                />
-            </div>
+            {/* Notes moved to Add Services section */}
         </div>
     );
 };
