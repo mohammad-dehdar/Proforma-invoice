@@ -6,7 +6,6 @@ import { companyCards } from '@/constants/company-info';
 import { useState } from 'react';
 import { detectBankFromCardNumber } from '@/utils/detect-bank';
 import { CardSelector } from '@/components/shared/card-selector';
-import { CardDisplay } from '@/components/shared/card-display';
 
 
 const generateRandomInvoiceNumber = (): string => {
@@ -160,15 +159,6 @@ export const InvoiceForm = () => {
           selectedCardNumber={invoice.paymentInfo.cardNumber}
           onCardSelect={handleCardSelect}
         />
-
-        {invoice.paymentInfo.cardNumber && (
-          <CardDisplay
-            cardNumber={invoice.paymentInfo.cardNumber}
-            cardHolderName={invoice.paymentInfo.cardHolderName}
-            bankName={invoice.paymentInfo.bankName}
-            iban={invoice.paymentInfo.iban}
-          />
-        )}
       </div>
     </div>
   )

@@ -3,6 +3,7 @@
 import { CreditCard, Check } from "lucide-react"
 import { companyCards } from "@/constants/company-info"
 import { detectBankFromCardNumber } from "@/utils/detect-bank"
+import { copyCardNumber, copyIBAN } from "@/utils/copy-to-clipboard"
 import { useState } from "react"
 
 interface CardSelectorProps {
@@ -12,6 +13,25 @@ interface CardSelectorProps {
 
 export const CardSelector = ({ selectedCardNumber, onCardSelect }: CardSelectorProps) => {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null)
+  const [copiedItem, setCopiedItem] = useState<string | null>(null)
+
+  const handleCopyCardNumber = async (e: React.MouseEvent, cardNumber: string) => {
+    e.stopPropagation()
+    const success = await copyCardNumber(cardNumber)
+    if (success) {
+      setCopiedItem(`card-${cardNumber}`)
+      setTimeout(() => setCopiedItem(null), 2000)
+    }
+  }
+
+  const handleCopyIBAN = async (e: React.MouseEvent, iban: string) => {
+    e.stopPropagation()
+    const success = await copyIBAN(iban)
+    if (success) {
+      setCopiedItem(`iban-${iban}`)
+      setTimeout(() => setCopiedItem(null), 2000)
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -35,7 +55,7 @@ export const CardSelector = ({ selectedCardNumber, onCardSelect }: CardSelectorP
               onClick={() => onCardSelect(String(card.id))}
               onMouseEnter={() => setHoveredCard(card.id)}
               onMouseLeave={() => setHoveredCard(null)}
-              className={`group relative h-32 rounded-xl overflow-hidden transition-all duration-200 border ${
+              className={`group relative rounded-xl overflow-hidden transition-all duration-200 border ${
                 isActive
                   ? "border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/20"
                   : "border-gray-600 bg-gray-800 hover:border-gray-500"
@@ -55,12 +75,13 @@ export const CardSelector = ({ selectedCardNumber, onCardSelect }: CardSelectorP
               <div className="absolute -left-8 -bottom-8 w-24 h-24 rounded-full bg-white/3" />
 
               {/* Content */}
-              <div className="relative h-full p-3 flex flex-col justify-between text-white z-10">
-                {/* Top section - Logo and checkmark */}
+              <div className="relative p-3 flex flex-col justify-between text-white z-10 min-h-[140px]">
+                {/* Top section - Bank name (left) and checkmark (right) */}
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-1">
-                    <div className="w-5 h-4 rounded bg-yellow-400/80 shadow-sm" />
-                    <div className="w-2 h-4 rounded bg-yellow-300/70 -ml-1" />
+                  <div>
+                    {displayBankName && (
+                      <div className="text-xs text-gray-300 bg-gray-700/50 px-2 py-0.5 rounded">{displayBankName}</div>
+                    )}
                   </div>
                   {isActive && (
                     <div className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 border border-blue-400">
@@ -69,21 +90,43 @@ export const CardSelector = ({ selectedCardNumber, onCardSelect }: CardSelectorP
                   )}
                 </div>
 
-                {/* Middle section - Card number */}
-                <div className="space-y-1">
+                {/* Middle section - Card number (centered) */}
+                <div className="flex flex-col items-center justify-center space-y-1 flex-1">
                   <div className="font-mono text-xs text-gray-300 tracking-wide">شماره کارت</div>
-                  <div className="font-mono text-sm sm:text-base font-semibold tracking-wider">{card.cardNumber}</div>
+                  <div 
+                    onClick={(e) => handleCopyCardNumber(e, card.cardNumber)}
+                    className={`font-mono text-sm sm:text-base font-semibold tracking-wider text-center cursor-pointer hover:text-blue-300 transition-colors ${
+                      copiedItem === `card-${card.cardNumber}` ? 'text-green-400' : 'text-white'
+                    }`}
+                    title="کلیک برای کپی"
+                  >
+                    {copiedItem === `card-${card.cardNumber}` ? '✓ کپی شد' : card.cardNumber}
+                  </div>
                 </div>
 
-                {/* Bottom section - Holder name and bank */}
+                {/* Bottom section - IBAN (left) and Holder name (right) */}
                 <div className="flex items-end justify-between">
-                  <div className="flex flex-col gap-0.5">
+                  <div>
+                    {card.iban && (
+                      <div className="flex flex-col gap-0.5 items-start">
+                        <div className="text-xs text-gray-400">شماره شبا</div>
+                        <div 
+                          onClick={(e) => handleCopyIBAN(e, card.iban!)}
+                          className={`font-mono text-xs break-all dir-ltr cursor-pointer hover:text-blue-300 transition-colors ${
+                            copiedItem === `iban-${card.iban}` ? 'text-green-400' : 'text-gray-300'
+                          }`}
+                          dir="ltr"
+                          title="کلیک برای کپی"
+                        >
+                          {copiedItem === `iban-${card.iban}` ? '✓ کپی شد' : card.iban}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-0.5 text-right">
                     <div className="text-xs text-gray-400">صاحب کارت</div>
                     <div className="font-semibold text-xs">{card.cardHolderName}</div>
                   </div>
-                  {displayBankName && (
-                    <div className="text-xs text-gray-300 bg-gray-700/50 px-2 py-0.5 rounded">{displayBankName}</div>
-                  )}
                 </div>
               </div>
 
