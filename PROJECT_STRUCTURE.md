@@ -34,7 +34,7 @@ Proforma-invoice/
 │   │   ├── invoice-history/
 │   │   ├── invoice-preview/
 │   │   │   └── print-optimized.tsx  # نسخه بهینه برای چاپ
-│   │   ├── srvice-list/
+│   │   ├── service-list/
 │   │   └── index.tsx
 │   │
 │   └── etmify-invoice-form.tsx      # فرم اصلی فاکتور
