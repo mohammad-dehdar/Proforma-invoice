@@ -25,8 +25,8 @@ export const CardSelector = ({ selectedCardNumber, onCardSelect }: CardSelectorP
         {companyCards.map((card) => {
           const isActive = card.cardNumber === selectedCardNumber
           const isHovered = hoveredCard === card.id
-          // تشخیص خودکار نام بانک اگر وجود نداشته باشد
-          const displayBankName = card.bankName || detectBankFromCardNumber(card.cardNumber) || ""
+          // تشخیص خودکار نام بانک
+          const displayBankName = detectBankFromCardNumber(card.cardNumber) || ""
 
           return (
             <button
