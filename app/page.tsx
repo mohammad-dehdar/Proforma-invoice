@@ -1,4 +1,4 @@
-import EtmifyInvoiceForm from '@/components/etmify-invoice-form';
+import { InvoiceWorkspace } from '@features';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AUTH_COOKIE_NAME, verifySessionToken } from '@/lib/auth';
@@ -11,5 +11,5 @@ export default async function Home() {
     redirect('/login');
   }
 
-  return <EtmifyInvoiceForm />;
+  return <InvoiceWorkspace />;
 }

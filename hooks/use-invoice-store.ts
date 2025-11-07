@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Invoice, Service } from '@/types/type';
-import { companyCards } from '@/constants/company-info';
-import { detectBankFromCardNumber } from '@/utils/detect-bank';
+import { createDefaultInvoice } from '@features/invoice/utils/default-invoice';
 
 interface InvoiceStore {
   invoice: Invoice;
@@ -13,36 +12,6 @@ interface InvoiceStore {
   reset: () => void;
   loadInvoice: (invoice: Invoice) => void;
 }
-
-// تابع کمکی برای ایجاد فاکتور پیش‌فرض
-const createDefaultInvoice = (): Invoice => {
-  const defaultCard = companyCards.find(card => card.isDefault) || companyCards[0];
-  const detectedBank = detectBankFromCardNumber(defaultCard.cardNumber);
-  const detectedBankName = detectedBank?.bank || defaultCard.bankName || '';
-  const detectedBankLogo = detectedBank?.logo || defaultCard.bankLogo;
-  
-  return {
-    number: '',
-    date: new Date().toLocaleDateString('fa-IR'),
-    customer: {
-      name: '',
-      company: '',
-      phone: '',
-      address: ''
-    },
-    services: [],
-    paymentInfo: {
-      cardNumber: defaultCard.cardNumber,
-      cardHolderName: defaultCard.cardHolderName,
-      bankName: detectedBankName,
-      bankLogo: detectedBankLogo,
-      iban: defaultCard.iban
-    },
-    discount: 0,
-    tax: 9,
-    notes: ''
-  };
-};
 
 export const useInvoiceStore = create<InvoiceStore>()(
   persist(

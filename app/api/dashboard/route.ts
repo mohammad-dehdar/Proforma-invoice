@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
 import { getDb } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { calculateInvoiceTotal, serializeInvoice, InvoiceDocument } from '@/lib/invoice-utils';
+import { calculateInvoiceTotal, serializeInvoice, InvoiceDocument } from '@utils/invoice-utils';
 
 export async function GET(request: NextRequest) {
   const user = await getAuthenticatedUser(request);

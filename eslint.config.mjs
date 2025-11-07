@@ -15,7 +15,7 @@ const eslintConfig = defineConfig([
   ]),
   {
     settings: {
-      // Ensure eslint-plugin-import resolves TS path aliases like @ui/* and @features/*
+      // Ensure eslint-plugin-import resolves TS path aliases like @components/* and @features/*
       "import/resolver": {
         typescript: {
           alwaysTryTypes: true,
@@ -31,13 +31,13 @@ const eslintConfig = defineConfig([
           patterns: [
             {
               group: [
-                "../**/components/ui/*",
-                "../../**/components/ui/*",
-                "../../../**/components/ui/*",
-                "**/components/ui/*",
+                "../**/shared/components/*",
+                "../../**/shared/components/*",
+                "../../../**/shared/components/*",
+                "**/shared/components/*",
               ],
               message:
-                "Use the alias @ui/* instead of relative paths to components/ui/*.",
+                "Use the shared component aliases (e.g. @components, @atoms, @molecules) instead of relative paths to shared/components.",
             },
           ],
         },

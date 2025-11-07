@@ -3,7 +3,6 @@ import { MongoClient, Db } from 'mongodb';
 const dbName = process.env.MONGODB_DB || 'proforma_invoice';
 
 declare global {
-  // eslint-disable-next-line no-var
   var __mongoClientPromise: Promise<MongoClient> | undefined;
 }
 

@@ -3,7 +3,7 @@ import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 import { getDb } from '@/lib/db';
 import { getAuthenticatedUser } from '@/lib/auth';
-import { serializeInvoice, InvoiceDocument } from '@/lib/invoice-utils';
+import { serializeInvoice, InvoiceDocument } from '@utils/invoice-utils';
 
 const serviceSchema = z.object({
   id: z.coerce.number(),
