@@ -17,6 +17,7 @@ export type PaymentInfo = {
   cardNumber: string;
   cardHolderName: string;
   bankName?: string;
+  bankLogo?: string;
   iban?: string; // ✅ فیلد شماره شبا اضافه شد
 };
 
@@ -50,7 +51,8 @@ export type CompanyCard = {
   id: number;
   cardNumber: string;
   cardHolderName: string;
-  bankName: string;
+  bankName?: string;
+  bankLogo?: string;
   iban: string; // ✅ فیلد شماره شبا اضافه شد
   isDefault: boolean;
 };

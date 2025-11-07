@@ -27,6 +27,7 @@ const invoiceSchema = z.object({
     cardNumber: z.string().min(1),
     cardHolderName: z.string().min(1),
     bankName: z.string().optional(),
+    bankLogo: z.string().optional(),
     iban: z.string().optional(),
   }),
   discount: z.coerce.number().min(0).max(100).optional(),

@@ -24,6 +24,7 @@ export interface InvoiceDocument {
     cardNumber: string;
     cardHolderName: string;
     bankName?: string;
+    bankLogo?: string;
     iban?: string;
   };
   discount?: number;

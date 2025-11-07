@@ -31,13 +31,15 @@ export const InvoiceForm = () => {
     if (selectedCard) {
       // تشخیص خودکار نام بانک اگر وجود نداشته باشد
       const detectedBank = detectBankFromCardNumber(selectedCard.cardNumber)
-      const bankName = detectedBank ?? ""
+      const bankName = detectedBank?.bank ?? selectedCard.bankName ?? ""
+      const bankLogo = detectedBank?.logo ?? selectedCard.bankLogo
 
       setInvoice({
         paymentInfo: {
           cardNumber: selectedCard.cardNumber,
           cardHolderName: selectedCard.cardHolderName,
           bankName: bankName,
+          bankLogo,
           iban: selectedCard.iban,
         },
       })

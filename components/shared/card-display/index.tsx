@@ -1,15 +1,22 @@
 "use client"
 
+import Image from "next/image"
 import { CreditCard } from "lucide-react"
+import { detectBankFromCardNumber } from "@/utils/detect-bank"
 
 interface CardDisplayProps {
   cardNumber: string
   cardHolderName: string
   bankName?: string
+  bankLogo?: string | null
   iban?: string
 }
 
-export const CardDisplay = ({ cardNumber, cardHolderName, bankName, iban }: CardDisplayProps) => {
+export const CardDisplay = ({ cardNumber, cardHolderName, bankName, bankLogo, iban }: CardDisplayProps) => {
+  const detectedBank = detectBankFromCardNumber(cardNumber)
+  const displayBankName = bankName || detectedBank?.bank || "BANK NAME"
+  const displayBankLogo = bankLogo || detectedBank?.logo || null
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-3">
@@ -17,42 +24,69 @@ export const CardDisplay = ({ cardNumber, cardHolderName, bankName, iban }: Card
         <label className="text-sm font-semibold text-blue-400">خلاصه کارت پرداخت</label>
       </div>
 
-      <div className="relative overflow-hidden rounded-xl border border-gray-600 bg-linear-to-br from-gray-700 via-gray-800 to-gray-900 p-4 sm:p-5 text-white shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl border border-gray-700 bg-linear-to-br from-gray-900 via-black to-gray-950 p-6 sm:p-8 text-white shadow-2xl">
         {/* Decorative background elements */}
-        <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white/5" />
-        <div className="absolute -left-10 -bottom-10 w-32 h-32 rounded-full bg-blue-500/5" />
+        <div className="absolute -right-12 -top-12 w-32 h-32 rounded-full bg-linear-to-br from-red-600/10 to-yellow-500/10 blur-2xl" />
+        <div className="absolute -left-12 bottom-0 w-40 h-40 rounded-full bg-linear-to-tr from-blue-600/5 to-purple-600/5 blur-3xl" />
 
         {/* Card content */}
-        <div className="relative z-10 flex flex-col justify-between min-h-[180px]">
-          {/* Top: Chip and bank name */}
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-1.5">
-              <div className="w-7 h-5 rounded bg-yellow-400/80 shadow-sm" />
-              <div className="w-2.5 h-5 rounded bg-yellow-300/70 -ml-1" />
+        <div className="relative z-10 flex flex-col justify-between min-h-[240px]">
+          {/* Top row: Mastercard logo + Chip + Bank name */}
+          <div className="flex items-start justify-between mb-8">
+            {/* Mastercard circles */}
+            <div className="flex items-center gap-1">
+              <div className="w-8 h-8 rounded-full bg-red-500 shadow-lg" />
+              <div className="w-8 h-8 rounded-full bg-yellow-400 shadow-lg -ml-3" />
             </div>
-            <div className="text-right">
-              <div className="text-xs text-gray-300 mb-0.5">بانک</div>
-              <div className="text-sm font-semibold">{bankName || "-"}</div>
+
+            {/* Chip */}
+            <div className="flex gap-0.5 bg-yellow-400/20 p-2 rounded">
+              <div className="w-2 h-3 bg-yellow-500" />
+              <div className="w-2 h-3 bg-yellow-500" />
+              <div className="w-2 h-3 bg-yellow-500" />
+              <div className="w-2 h-3 bg-yellow-500" />
+            </div>
+
+            {/* Bank name on the right */}
+            <div className="text-right flex flex-col items-end gap-1">
+              {displayBankLogo ? (
+                <div className="bg-white/5 backdrop-blur-sm px-2 py-1 rounded-md border border-white/10">
+                  <Image
+                    src={displayBankLogo}
+                    alt={displayBankName}
+                    width={64}
+                    height={32}
+                    className="h-8 w-auto object-contain"
+                    priority={false}
+                  />
+                </div>
+              ) : null}
+              <div className="text-xs text-gray-400 font-light">بانک</div>
+              <div className="text-base font-bold tracking-wide">{displayBankName}</div>
             </div>
           </div>
 
-          {/* Middle: Card number */}
-          <div className="mb-6">
-            <div className="flex flex-col gap-2 font-mono text-lg sm:text-xl md:text-2xl tracking-widest font-light text-center">
-              <span className="text-gray-300 mb-1">شماره کارت</span>
-              {cardNumber || "---- ---- ---- ----"}
+          {/* Middle: Card number with label */}
+          <div className="mb-8">
+            <div className="text-xs text-gray-400 font-light mb-2">شماره کارت</div>
+            <div className="font-mono text-2xl sm:text-3xl tracking-[0.35em] font-light text-gray-100 wrap-break-word">
+              {cardNumber || "0000 0000 0000 0000"}
             </div>
           </div>
 
-          {/* Bottom: Cardholder info */}
-          <div className="grid grid-cols-2 gap-4 text-xs sm:text-sm">
-            <div className="text-right">
-              <div className="text-gray-300 mb-1">صاحب کارت</div>
-              <div className="font-semibold">{cardHolderName || "-"}</div>
+          {/* Bottom row: Cardholder + Expiry date */}
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-xs text-gray-400 font-light mb-1">صاحب کارت</div>
+              <div className="text-sm sm:text-base font-semibold uppercase tracking-wide">
+                {cardHolderName || "CARD HOLDER"}
+              </div>
             </div>
-            <div dir="ltr">
-              <div className="text-gray-300 mb-1">IBAN</div>
-              <div className="font-mono break-all text-xs">{iban || "IR-- ---- ---- ---- ---- ---- --"}</div>
+
+            {/* IBAN/Expiry on right side */}
+            <div className="text-right">
+              <div className="text-xs text-gray-400 font-light mb-1">تاریخ انقضا</div>
+              <div className="font-mono text-sm">{iban || "MM/YY"}</div>
             </div>
           </div>
         </div>

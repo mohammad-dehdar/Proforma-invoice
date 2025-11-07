@@ -17,7 +17,9 @@ interface InvoiceStore {
 // Helper to create a fresh default invoice (used for initial state and reset)
 const createDefaultInvoice = (): Invoice => {
   const defaultCard = companyCards.find(card => card.isDefault) || companyCards[0];
-  const detectedBankName = detectBankFromCardNumber(defaultCard.cardNumber) || '';
+  const detectedBank = detectBankFromCardNumber(defaultCard.cardNumber);
+  const detectedBankName = detectedBank?.bank || defaultCard.bankName || '';
+  const detectedBankLogo = detectedBank?.logo || defaultCard.bankLogo;
   
   return {
     _id: undefined,
@@ -34,6 +36,7 @@ const createDefaultInvoice = (): Invoice => {
       cardNumber: defaultCard.cardNumber,
       cardHolderName: defaultCard.cardHolderName,
       bankName: detectedBankName,
+      bankLogo: detectedBankLogo,
       iban: defaultCard.iban
     },
     discount: 0,
