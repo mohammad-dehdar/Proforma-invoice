@@ -74,63 +74,7 @@ html {
     size: A4;
   }
 
-  /* Print container */
-  .print-container {
-    max-width: 100% !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    background: white !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* Preserve colors */
-  .bg-gradient-to-l,
-  .bg-gradient-to-r,
-  .bg-gradient-to-br {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* Typography adjustments */
-  h1 {
-    font-size: 1.5rem !important;
-  }
-
-  h2 {
-    font-size: 1.2rem !important;
-  }
-
-  h3 {
-    font-size: 1rem !important;
-  }
-
-  p,
-  td,
-  th {
-    font-size: 0.75rem !important;
-  }
-
-  /* Table styling */
-  table {
-    border-collapse: collapse !important;
-    width: 100% !important;
-  }
-
-  th,
-  td {
-    border: 1px solid #e5e7eb !important;
-    padding: 0.5rem !important;
-  }
-
-  /* Prevent page breaks */
-  .print-container,
-  table,
-  tr {
-    page-break-inside: avoid !important;
-  }
-
-  /* Remove shadows and transitions */
+  /* Remove transitions that cause flicker */
   * {
     box-shadow: none !important;
     transition: none !important;

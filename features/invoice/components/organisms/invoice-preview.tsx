@@ -312,362 +312,51 @@ export const InvoicePreview = ({ setShowPreview, handlePrint }: InvoicePreviewPr
 
       <style>{`
   @media print {
-    /* Hide action buttons */
     .no-print {
       display: none !important;
     }
 
-    /* صفحه چاپ - کاهش margin برای فضای بیشتر */
     @page {
       size: A4;
-      margin: 6mm 8mm !important;
+      margin: 8mm 10mm;
     }
 
-    /* Ensure print container is visible */
+    html,
+    body {
+      background: #ffffff !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
     .print-container {
-      --invoice-print-scale: 0.92;
-      max-width: 100% !important;
+      --invoice-print-scale: 0.88;
+      --invoice-print-width: 210mm;
+      width: calc(var(--invoice-print-width) / var(--invoice-print-scale));
+      max-width: calc(var(--invoice-print-width) / var(--invoice-print-scale));
+      margin: 0 auto !important;
+      background: #ffffff !important;
       box-shadow: none !important;
       border-radius: 0 !important;
-      background: white !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      page-break-inside: avoid !important;
       transform: scale(var(--invoice-print-scale));
       transform-origin: top center;
-      width: calc(100% / var(--invoice-print-scale));
-    }
-
-    /* کاهش padding header */
-    .print-container > div:first-child,
-    .print-container .bg-linear-to-l:first-child,
-    .print-container .relative {
-      padding: 10px 15px !important;
-    }
-
-    /* کاهش padding content area */
-    .print-container > div:last-child {
-      padding: 10px 15px !important;
-    }
-
-    /* کاهش padding برای div های داخلی */
-    .print-container .px-12,
-    .print-container .py-10 {
-      padding: 10px 15px !important;
-    }
-
-    /* Header - کاهش فونت و فاصله */
-    .print-container h1 {
-      font-size: 1.4rem !important;
-      margin-bottom: 0.1rem !important;
-      line-height: 1.2 !important;
-      font-weight: 700 !important;
-    }
-
-    .print-container h1 + p {
-      font-size: 0.65rem !important;
-      margin-top: 0.1rem !important;
-      margin-bottom: 0 !important;
-    }
-
-    /* کاهش فاصله‌ها و فونت‌ها */
-    .print-container h2 {
-      font-size: 0.95rem !important;
-      margin-bottom: 0.3rem !important;
-      line-height: 1.3 !important;
-      font-weight: 700 !important;
-    }
-
-    .print-container h2 + p {
-      font-size: 0.65rem !important;
-      margin-top: 0.1rem !important;
-      margin-bottom: 0 !important;
-    }
-
-    .print-container h3 {
-      font-size: 0.85rem !important;
-      margin-bottom: 0.25rem !important;
-      font-weight: 700 !important;
-    }
-
-    /* کاهش padding تمام المان‌ها */
-    .print-container p {
-      font-size: 0.7rem !important;
-      line-height: 1.25 !important;
-      margin: 0.15rem 0 !important;
-    }
-
-    /* Invoice Meta - شماره و تاریخ */
-    .print-container .grid.grid-cols-2 {
-      gap: 0.5rem !important;
-      margin-bottom: 0.6rem !important;
-    }
-
-    .print-container .grid.grid-cols-2 > div {
-      padding: 0.5rem !important;
-    }
-
-    .print-container .grid.grid-cols-2 p.text-slate-500 {
-      font-size: 0.65rem !important;
-      margin-bottom: 0.15rem !important;
-    }
-
-    .print-container .grid.grid-cols-2 p.text-xl {
-      font-size: 0.85rem !important;
-    }
-
-    /* Customer & Payment Info Grid */
-    .print-container .grid.md\\:grid-cols-2 {
-      gap: 0.5rem !important;
-      margin-bottom: 0.6rem !important;
-    }
-
-    .print-container .grid.md\\:grid-cols-2 > div {
-      padding: 0.5rem !important;
-    }
-
-    .print-container .grid.md\\:grid-cols-2 .border-b {
-      padding-bottom: 0.4rem !important;
-      margin-bottom: 0.4rem !important;
-    }
-
-    .print-container .grid.md\\:grid-cols-2 .space-y-3 > * {
-      margin-top: 0.25rem !important;
-      margin-bottom: 0.25rem !important;
-    }
-
-    .print-container .grid.md\\:grid-cols-2 p.text-xs {
-      font-size: 0.6rem !important;
-      margin-bottom: 0.1rem !important;
-    }
-
-    .print-container .grid.md\\:grid-cols-2 p.text-slate-900 {
-      font-size: 0.7rem !important;
-    }
-
-    /* کاهش ارتفاع کارت‌های اطلاعات */
-    .print-container .grid > div {
-      padding: 0.5rem !important;
-    }
-
-    /* کاهش فاصله بین grid items */
-    .print-container .grid {
-      gap: 0.5rem !important;
-    }
-
-    /* کاهش فاصله جدول */
-    .print-container table {
-      margin-bottom: 0.5rem !important;
-      font-size: 0.7rem !important;
-      border-collapse: collapse !important;
       page-break-inside: avoid !important;
     }
 
-    .print-container table thead tr {
-      background-color: #0f172a !important;
+    .print-container > * {
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
 
-    .print-container table th {
-      padding: 0.3rem 0.4rem !important;
-      font-size: 0.65rem !important;
-      font-weight: 600 !important;
-      border: none !important;
+    .print-container table,
+    .print-container tr,
+    .print-container td,
+    .print-container th {
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
 
-    .print-container table td {
-      padding: 0.3rem 0.4rem !important;
-      font-size: 0.65rem !important;
-      border: none !important;
-      border-bottom: 1px solid #e2e8f0 !important;
-    }
-
-    .print-container table tbody tr:last-child td {
-      border-bottom: none !important;
-    }
-
-    /* کاهش ارتفاع باکس جمع کل و محاسبات */
-    .print-container .bg-slate-50 {
-      padding: 0.5rem !important;
-      font-size: 0.7rem !important;
-      margin-bottom: 0.5rem !important;
-    }
-
-    .print-container .bg-slate-50 .space-y-3 > * {
-      margin-top: 0.2rem !important;
-      margin-bottom: 0.2rem !important;
-    }
-
-    .print-container .bg-linear-to-l {
-      padding: 0.6rem !important;
-      font-size: 0.7rem !important;
-      margin-bottom: 0.5rem !important;
-    }
-
-    .print-container .bg-linear-to-l p.text-slate-300 {
-      font-size: 0.65rem !important;
-      margin-bottom: 0.15rem !important;
-    }
-
-    .print-container .bg-linear-to-l p.text-3xl {
-      font-size: 1.2rem !important;
-      font-weight: 700 !important;
-    }
-
-    /* Notes box */
-    .print-container .bg-amber-50 {
-      padding: 0.5rem !important;
-      margin-bottom: 0.5rem !important;
-      page-break-inside: avoid !important;
-    }
-
-    .print-container .bg-amber-50 h3 {
-      font-size: 0.75rem !important;
-      margin-bottom: 0.2rem !important;
-    }
-
-    .print-container .bg-amber-50 p {
-      font-size: 0.65rem !important;
-    }
-
-    .print-container .grid {
-      page-break-inside: avoid !important;
-    }
-
-    /* Footer */
-    .print-container .pt-8 {
-      padding-top: 0.5rem !important;
-      margin-top: 0.5rem !important;
-      border-top: 1px solid #e2e8f0 !important;
-    }
-
-    .print-container .pt-8 p {
-      font-size: 0.7rem !important;
-      margin-bottom: 0.3rem !important;
-    }
-
-    .print-container .pt-8 .flex span {
-      font-size: 0.6rem !important;
-    }
-
-    /* کاهش فاصله بین sections */
-    .print-container .mb-8 {
-      margin-bottom: 0.5rem !important;
-    }
-
-    .print-container .mb-10 {
-      margin-bottom: 0.6rem !important;
-    }
-
-    .print-container .mb-6 {
-      margin-bottom: 0.4rem !important;
-    }
-
-    /* کاهش padding border sections */
-    .print-container .pb-4 {
-      padding-bottom: 0.4rem !important;
-    }
-
-    .print-container .mb-5 {
-      margin-bottom: 0.4rem !important;
-    }
-
-    /* کاهش فاصله customer و payment info */
-    .print-container .space-y-3 > * + * {
-      margin-top: 0.25rem !important;
-    }
-
-    /* کاهش gap بین flex items */
-    .print-container .gap-3 {
-      gap: 0.3rem !important;
-    }
-
-    .print-container .gap-4 {
-      gap: 0.4rem !important;
-    }
-
-    .print-container .gap-6 {
-      gap: 0.4rem !important;
-    }
-
-    /* کاهش padding icon containers */
-    .print-container .p-2 {
-      padding: 0.25rem !important;
-    }
-
-    .print-container .p-3 {
-      padding: 0.3rem !important;
-    }
-
-    .print-container .p-4 {
-      padding: 0.35rem !important;
-    }
-
-    .print-container .p-5 {
-      padding: 0.4rem !important;
-    }
-
-    .print-container .p-6 {
-      padding: 0.5rem !important;
-    }
-
-    /* کاهش اندازه logo */
-    .print-container img {
-      height: 38px !important;
-      width: auto !important;
-      max-width: 120px !important;
-      object-fit: contain !important;
-    }
-
-    /* کاهش اندازه icon */
-    .print-container svg {
-      width: 12px !important;
-      height: 12px !important;
-    }
-
-    /* کاهش فونت کلی */
-    body {
-      font-size: 11px !important;
-    }
-
-    /* کاهش border radius */
-    .print-container .rounded-xl {
-      border-radius: 0.25rem !important;
-    }
-
-    .print-container .rounded-lg {
-      border-radius: 0.2rem !important;
-    }
-
-    /* حذف decorative elements در چاپ */
     .print-container .absolute {
       display: none !important;
-    }
-
-    /* کاهش line-height */
-    .print-container * {
-      line-height: 1.25 !important;
-    }
-
-    /* حذف hover effects */
-    .print-container .hover\\:bg-slate-50:hover {
-      background-color: transparent !important;
-    }
-
-    /* کاهش text sizes اضافی */
-    .print-container .text-sm {
-      font-size: 0.65rem !important;
-    }
-
-    .print-container .text-lg {
-      font-size: 0.8rem !important;
-    }
-
-    .print-container .text-xl {
-      font-size: 0.85rem !important;
-    }
-
-    .print-container .text-2xl {
-      font-size: 0.95rem !important;
     }
   }
 `}</style>
