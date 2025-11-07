@@ -11,39 +11,31 @@ Proforma-invoice/
 │   ├── layout.tsx                   # Layout اصلی برنامه
 │   └── page.tsx                     # صفحه اصلی (Home)
 │
-├── 🧩 components/                   # کامپوننت‌های React
-│   ├── etmify-invoice-form.tsx      # فرم اصلی فاکتور
-│   ├── layout/                      # کامپوننت‌های لایه‌بندی (Header, Footer و ...)
-│   │   ├── Footer.tsx
-│   │   ├── Header.tsx
-│   │   ├── MainLayout.tsx
+├── 🧩 features/                      # ماژول‌های فیچر بیس
+│   ├── auth/
+│   │   └── components/organisms/login-form.tsx
+│   ├── dashboard/
+│   │   └── components/organisms/dashboard-overview.tsx
+│   ├── invoice/
+│   │   ├── components/
+│   │   │   ├── molecules/           # اجزای مولکولی مثل DiscountTaxControls و EmailModal
+│   │   │   ├── organisms/           # اجزای سطح بالا مثل InvoiceForm, ServiceList, InvoiceHistory
+│   │   │   └── templates/           # قالب اصلی رابط کاربری (InvoiceWorkspace)
+│   │   ├── utils/                   # توابع اختصاصی دامنه فاکتور (payload، شماره فاکتور و ...)
 │   │   └── index.ts
-│   │
-│   ├── templates/                   # کامپوننت‌های قالب (Template)
-│   │   ├── dashboard/
-│   │   ├── discount-tax/
-│   │   ├── email-modal/
-│   │   ├── invoice-actions/
-│   │   ├── invoice-form/
-│   │   ├── invoice-history/
-│   │   ├── invoice-preview/
-│   │   │   └── print-optimized.tsx  # نسخه بهینه برای چاپ
-│   │   ├── service-list/
-│   │   └── index.tsx
-│   ├── shared/                      # کامپوننت‌های مشترک بین بخش‌ها
-│   │   ├── card-display/
-│   │   │   └── index.tsx
-│   │   └── card-selector/
-│   │       └── index.tsx
-│   │
-│   └── ui/                          # اجزای UI قابل استفاده مجدد
-│       ├── Buttons.tsx
-│       ├── Input.tsx
-│       ├── Label.tsx
-│       ├── Modal.tsx
-│       ├── Select.tsx
-│       ├── StatCard.tsx
-│       └── index.ts
+│   └── index.ts                     # تجمیع اکسپورت‌های فیچرها
+│
+├── 🧱 shared/                        # اجزای مشترک Atomic Design
+│   └── components/
+│       ├── atoms/                   # اجزای پایه (Button، Input، Label، ...)
+│       ├── molecules/               # اجزای ترکیبی (Modal، StatCard، CardSelector، ...)
+│       ├── organisms/               # ساختارهای سازمانی (Layout)
+│       └── templates/               # تمپلیت‌های عمومی (در حال حاضر خالی)
+│
+├── 🔌 services/                      # ماژول‌های ارتباط با سرور (fetch)
+│   ├── auth-service.ts
+│   ├── dashboard-service.ts
+│   └── invoice-service.ts
 │
 ├── ⚙️ config/                       # تنظیمات پروژه
 │   ├── env.ts                       # متغیرهای محیطی
@@ -61,8 +53,9 @@ Proforma-invoice/
 ├── 🎣 hooks/                        # Custom React Hooks
 │   └── use-local-storage.ts         # هوک مدیریت Local Storage
 │
-├── 🛠️ lib/                          # کتابخانه‌های کمکی
-│   └── utils.ts                     # توابع کمکی (clsx, tailwind-merge)
+├── 🛠️ lib/                          # کتابخانه‌های کمکی سمت سرور
+│   ├── auth.ts
+│   └── db.ts
 │
 ├── 🗄️ store/                        # State Management (Zustand)
 │   └── use-invoice-store.ts         # استور مدیریت فاکتور
@@ -71,7 +64,12 @@ Proforma-invoice/
 │   └── type.ts                      # تعاریف تایپ
 │
 ├── 🔧 utils/                        # توابع کمکی عمومی
-│   └── formatter.ts                 # فرمت‌کننده‌ها (مثل فرمت پول، تاریخ)
+│   ├── cn.ts                        # تابع ترکیب کلاس‌ها
+│   ├── copy-to-clipboard.ts
+│   ├── detect-bank.ts
+│   ├── formatter.ts                 # فرمت‌کننده‌ها (مثل فرمت پول، تاریخ)
+│   ├── invoice-utils.ts             # توابع پایگاه‌داده فاکتور
+│   └── validation.ts                # اعتبارسنجی داده‌ها
 │
 ├── 🎨 public/                       # فایل‌های استاتیک
 │   ├── images/
@@ -98,7 +96,7 @@ Proforma-invoice/
 
 ### 1. **لایه Presentation (نمایش)**
    - `app/` - صفحات و روتینگ Next.js
-   - `components/` - کامپوننت‌های UI
+   - `shared/components` و `features/*/components` - اجزای UI بر اساس Atomic Design و فیچر
 
 ### 2. **لایه Business Logic (منطق تجاری)**
    - `store/` - مدیریت state با Zustand
@@ -136,10 +134,10 @@ Proforma-invoice/
 پروژه از الگوی Atomic Design استفاده می‌کند:
 
 ```
-layout/         → ساختار کلی صفحه (Header, Footer, MainLayout)
-shared/         → المان‌های مشترک (CardDisplay، CardSelector)
-ui/             → اجزای پایه UI (Buttons، Input، Select و ...)
-etmify-invoice-form.tsx → فرم اصلی Proforma Invoice
+shared/components/atoms/        → اجزای پایه (Input، Button، Label و ...)
+shared/components/molecules/    → اجزای ترکیبی (Modal، CardSelector، ...)
+shared/components/organisms/    → ساختارهای سازمانی مانند Layout
+features/invoice/components/    → اجزای فیچر Invoice در سطح Molecule/Organism/Template
 ```
 
 ### Feature-based Organization
@@ -171,10 +169,12 @@ Display/Export
 
 با استفاده از `tsconfig.json`:
 - `@/*` → ریشه پروژه (`./`)
+- `@features/*` → ماژول‌های فیچر (`features/*`)
+- `@components/*` → اجزای مشترک (`shared/components/*`)
 
 مثال:
 ```typescript
-import EtmifyInvoiceForm from "@/components/etmify-invoice-form";
+import { InvoiceWorkspace } from "@features";
 import { useInvoiceStore } from "@/store/use-invoice-store";
 ```
 

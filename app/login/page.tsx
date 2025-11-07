@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import LoginForm from '@/features/auth/login-form';
+import { LoginForm } from '@features';
 import { AUTH_COOKIE_NAME, verifySessionToken } from '@/lib/auth';
 
 export default async function LoginPage() {

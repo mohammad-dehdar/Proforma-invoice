@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -20,9 +24,54 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@ui/*": ["components/ui/*"],
-      "@features/*": ["features/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@components/*": [
+        "shared/components/*"
+      ],
+      "@atoms/*": [
+        "shared/components/atoms/*"
+      ],
+      "@molecules/*": [
+        "shared/components/molecules/*"
+      ],
+      "@organisms/*": [
+        "shared/components/organisms/*"
+      ],
+      "@templates/*": [
+        "shared/components/templates/*"
+      ],
+      "@features/*": [
+        "features/*"
+      ],
+      "@services/*": [
+        "services/*"
+      ],
+      "@utils/*": [
+        "utils/*"
+      ],
+      "@shared/*": [
+        "shared/*"
+      ],
+      "@components": [
+        "shared/components/index.ts"
+      ],
+      "@atoms": [
+        "shared/components/atoms/index.ts"
+      ],
+      "@molecules": [
+        "shared/components/molecules/index.ts"
+      ],
+      "@organisms": [
+        "shared/components/organisms/index.ts"
+      ],
+      "@templates": [
+        "shared/components/templates/index.ts"
+      ],
+      "@features": [
+        "features/index.ts"
+      ]
     }
   },
   "include": [
@@ -35,5 +84,7 @@
     ".next\\dev/types/**/*.ts",
     ".next\\dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

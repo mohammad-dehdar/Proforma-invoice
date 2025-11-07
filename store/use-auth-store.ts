@@ -1,9 +1,6 @@
 import { create } from 'zustand';
 
-interface AuthUser {
-  id: string;
-  username: string;
-}
+import { AuthUser, checkSession as fetchSession, login as authLogin, logout as authLogout } from '@services/auth-service';
 
 interface AuthState {
   user: AuthUser | null;
@@ -48,21 +45,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (username, password) => {
     set({ loading: true, error: null });
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ username, password }),
-      });
+      const result = await authLogin(username, password);
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({ message: 'ورود ناموفق بود' }));
-        set({ loading: false, error: data.message || 'ورود ناموفق بود' });
+      if (!result.success || !result.user) {
+        set({ loading: false, error: result.message || 'ورود ناموفق بود' });
         return false;
       }
 
-      const data = await response.json();
-      set({ user: data.user, loading: false, initialized: true, error: null });
+      set({ user: result.user, loading: false, initialized: true, error: null });
       return true;
     } catch (error) {
       console.error('Login request failed', error);
@@ -73,10 +63,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await authLogout();
     } catch (error) {
       console.error('Logout request failed', error);
     } finally {
@@ -87,18 +74,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   checkSession: async () => {
     set({ loading: true });
     try {
-      const response = await fetch('/api/auth/session', {
-        method: 'GET',
-        credentials: 'include',
-      });
+      const result = await fetchSession();
 
-      if (!response.ok) {
+      if (!result.authenticated) {
         set({ user: null, loading: false, initialized: true });
         return;
       }
 
-      const data = await response.json();
-      set({ user: data.user, loading: false, initialized: true, error: null });
+      set({ user: result.user ?? null, loading: false, initialized: true, error: null });
     } catch (error) {
       console.error('Session check failed', error);
       set({ user: null, loading: false, initialized: true });
