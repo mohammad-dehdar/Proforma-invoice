@@ -18,10 +18,11 @@ interface InvoiceActionsProps {
 }
 
 export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
-  const { invoice, setInvoice } = useInvoiceStore(
+  const { invoice, setInvoice, reset } = useInvoiceStore(
     useShallow((state) => ({
       invoice: state.invoice,
       setInvoice: state.setInvoice,
+      reset: state.reset,
     }))
   );
   const [isSaving, setIsSaving] = useState(false);
@@ -63,6 +64,7 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
 
       window.dispatchEvent(new Event('invoice:saved'));
       setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
+      reset();
     } catch (error) {
       console.error('خطا در ذخیره فاکتور:', error);
       setErrorModal('❌ خطا در ذخیره فاکتور! لطفاً دوباره تلاش کنید.');
@@ -91,6 +93,7 @@ export const InvoiceActions = ({ onPreview, onEmail }: InvoiceActionsProps) => {
 
       window.dispatchEvent(new Event('invoice:saved'));
       setSuccessModal('✅ فاکتور با موفقیت ذخیره شد!');
+      reset();
     } catch (error) {
       console.error('خطا در ذخیره فاکتور:', error);
       setErrorModal('❌ خطا در ذخیره فاکتور! لطفاً دوباره تلاش کنید.');
