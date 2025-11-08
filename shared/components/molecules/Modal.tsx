@@ -10,13 +10,14 @@ interface ModalProps {
     children?: React.ReactNode;
     footer?: React.ReactNode;
     disableClose?: boolean;
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const sizeClasses: Record<NonNullable<ModalProps['size']>, string> = {
     sm: 'max-w-sm',
     md: 'max-w-md',
     lg: 'max-w-lg',
+    xl: 'max-w-5xl',
 };
 
 export const Modal: React.FC<ModalProps> = ({
@@ -42,7 +43,9 @@ export const Modal: React.FC<ModalProps> = ({
             role="dialog"
             aria-modal="true"
         >
-            <div className={`bg-gray-800 rounded-lg p-6 w-full ${sizeClasses[size]} mx-4 shadow-2xl`}>
+            <div
+                className={`bg-gray-800 rounded-lg p-6 w-full ${sizeClasses[size]} mx-4 shadow-2xl flex flex-col max-h-[90vh]`}
+            >
                 <div className="flex justify-between items-center mb-4">
                     {title ? (
                         <h3 className="text-xl font-bold text-blue-400">{title}</h3>
@@ -59,7 +62,7 @@ export const Modal: React.FC<ModalProps> = ({
                     </button>
                 </div>
 
-                <div className="text-gray-200">{children}</div>
+                <div className="text-gray-200 overflow-y-auto pr-1 flex-1">{children}</div>
 
                 {footer && (
                     <div className="mt-6 flex justify-end gap-3">

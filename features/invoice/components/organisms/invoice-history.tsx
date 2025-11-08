@@ -1,12 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileText, Trash2, Eye, Pencil } from 'lucide-react';
 
 import { Button } from '@atoms';
 import { Modal } from '@molecules';
-import { deleteInvoice as deleteInvoiceRequest, fetchInvoices as fetchInvoiceList } from '@services/invoice-service';
+import {
+    deleteInvoice as deleteInvoiceRequest,
+    fetchInvoices as fetchInvoiceList,
+    saveInvoice,
+    replaceInvoice,
+} from '@services/invoice-service';
+import { buildInvoicePayload } from '@features/invoice/utils/invoice-payload';
+import { InvoiceForm } from './invoice-form';
+import { DiscountTaxControls } from '../molecules/discount-tax-controls';
+import { ServiceList } from './service-list';
 import {
     formatNumber,
     formatPrice,
@@ -16,20 +25,210 @@ import {
     calculateTax,
 } from '@/utils/formatter';
 import { Invoice } from '@/types/type';
-import { useInvoiceStore } from '@/store/use-invoice-store';
+import {
+    InvoiceStoreProvider,
+    createInvoiceStore,
+    useInvoiceStore,
+} from '@/store/use-invoice-store';
+import { validateInvoice } from '@/utils/validation';
 
-interface InvoiceHistoryProps {
-    onNavigateToInvoice?: () => void;
+const cloneInvoiceForEditing = (invoice: Invoice): Invoice => ({
+    ...invoice,
+    customer: { ...invoice.customer },
+    paymentInfo: { ...invoice.paymentInfo },
+    services: invoice.services.map((service) => ({ ...service })),
+});
+
+interface EditInvoiceModalProps {
+    store: ReturnType<typeof createInvoiceStore>;
+    onClose: () => void;
+    onSaved: (invoice: Invoice) => void;
 }
 
-export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => {
+const EditInvoiceModal = ({ store, onClose, onSaved }: EditInvoiceModalProps) => (
+    <InvoiceStoreProvider store={store}>
+        <EditInvoiceModalContent onClose={onClose} onSaved={onSaved} />
+    </InvoiceStoreProvider>
+);
+
+const EditInvoiceModalContent = ({
+    onClose,
+    onSaved,
+}: {
+    onClose: () => void;
+    onSaved: (invoice: Invoice) => void;
+}) => {
+    const router = useRouter();
+    const { invoice } = useInvoiceStore();
+    const { reset } = useInvoiceStore((state) => ({ reset: state.reset }));
+    const [isSaving, setIsSaving] = useState(false);
+    const [errorModal, setErrorModal] = useState<string | null>(null);
+    const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
+    const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
+    const validation = useMemo(() => validateInvoice(invoice), [invoice]);
+
+    const handleSave = async () => {
+        if (!validation.isValid) {
+            const errorMessages = validation.errors.map((e) => e.message).join('\n');
+            setErrorModal(`لطفاً خطاهای زیر را برطرف کنید:\n\n${errorMessages}`);
+            return;
+        }
+
+        setIsSaving(true);
+
+        try {
+            const payload = buildInvoicePayload(invoice);
+            const result = await saveInvoice(payload, invoice._id);
+
+            if (result.unauthorized) {
+                router.replace('/login');
+                return;
+            }
+
+            if (result.conflict) {
+                setPendingInvoiceId(result.conflictInvoiceId ?? null);
+                setConfirmReplaceOpen(true);
+                return;
+            }
+
+            window.dispatchEvent(new Event('invoice:saved'));
+            onSaved(result.invoice ?? invoice);
+        } catch (error) {
+            console.error('خطا در بروزرسانی فاکتور:', error);
+            setErrorModal('❌ خطا در بروزرسانی فاکتور! لطفاً دوباره تلاش کنید.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleConfirmReplace = async () => {
+        if (!pendingInvoiceId) return;
+        setIsSaving(true);
+        try {
+            const result = await replaceInvoice(
+                pendingInvoiceId,
+                buildInvoicePayload(invoice),
+            );
+
+            if (result.unauthorized) {
+                router.replace('/login');
+                return;
+            }
+
+            window.dispatchEvent(new Event('invoice:saved'));
+            onSaved(result.invoice ?? invoice);
+        } catch (error) {
+            console.error('خطا در بروزرسانی فاکتور:', error);
+            setErrorModal('❌ خطا در بروزرسانی فاکتور! لطفاً دوباره تلاش کنید.');
+        } finally {
+            setIsSaving(false);
+            setConfirmReplaceOpen(false);
+            setPendingInvoiceId(null);
+        }
+    };
+
+    return (
+        <>
+            <Modal
+                isOpen
+                onClose={() => {
+                    if (!isSaving) {
+                        reset();
+                        onClose();
+                    }
+                }}
+                disableClose={isSaving}
+                title={`ویرایش فاکتور ${invoice.number}`}
+                size="xl"
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={onClose} disabled={isSaving}>
+                            انصراف
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={handleSave}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
+                        </Button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    <InvoiceForm />
+                    <DiscountTaxControls />
+                    <ServiceList />
+
+                    {!validation.isValid && (
+                        <div className="bg-red-900/20 border border-red-500 rounded-lg p-3 sm:p-4">
+                            <p className="text-red-300 text-sm font-semibold mb-2">
+                                ⚠️ لطفاً موارد زیر را اصلاح کنید:
+                            </p>
+                            <ul className="text-red-200 text-xs sm:text-sm space-y-1 list-disc list-inside">
+                                {validation.errors.map((error, index) => (
+                                    <li key={index}>{error.message}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            </Modal>
+
+            <Modal
+                isOpen={confirmReplaceOpen}
+                onClose={() => setConfirmReplaceOpen(false)}
+                title="تأیید جایگزینی"
+                size="sm"
+                footer={
+                    <>
+                        <Button
+                            variant="secondary"
+                            onClick={() => setConfirmReplaceOpen(false)}
+                            disabled={isSaving}
+                        >
+                            انصراف
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={handleConfirmReplace}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'در حال بروزرسانی...' : 'جایگزینی فاکتور'}
+                        </Button>
+                    </>
+                }
+            >
+                <p className="text-sm leading-6">
+                    فاکتوری با این شماره وجود دارد. آیا می‌خواهید آن را با فاکتور فعلی جایگزین کنید؟
+                </p>
+            </Modal>
+
+            <Modal
+                isOpen={!!errorModal}
+                onClose={() => setErrorModal(null)}
+                title="خطا"
+                size="sm"
+                footer={
+                    <Button variant="primary" onClick={() => setErrorModal(null)}>
+                        متوجه شدم
+                    </Button>
+                }
+            >
+                <pre className="whitespace-pre-wrap text-sm leading-6">{errorModal || ''}</pre>
+            </Modal>
+        </>
+    );
+};
+
+export const InvoiceHistory = () => {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const { loadInvoice } = useInvoiceStore();
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<null | string>(null);
     const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
     const [infoModal, setInfoModal] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [editStore, setEditStore] = useState<ReturnType<typeof createInvoiceStore> | null>(null);
     const router = useRouter();
 
     const loadInvoices = useCallback(async () => {
@@ -92,6 +291,26 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
     const invoicePendingDeletion = confirmDeleteOpen
         ? invoices.find((inv) => inv._id === confirmDeleteOpen)
         : null;
+
+    const handleOpenEdit = (invoice: Invoice) => {
+        const cloned = cloneInvoiceForEditing(invoice);
+        setEditStore(
+            createInvoiceStore({ initialInvoice: cloned, persistState: false }),
+        );
+        setViewInvoice(null);
+    };
+
+    const handleCloseEdit = () => {
+        setEditStore(null);
+    };
+
+    const handleEditedInvoice = (updatedInvoice: Invoice) => {
+        setInvoices((prev) =>
+            prev.map((inv) => (inv._id === updatedInvoice._id ? updatedInvoice : inv)),
+        );
+        setInfoModal('فاکتور با موفقیت بروزرسانی شد.');
+        handleCloseEdit();
+    };
 
     const viewInvoiceSubtotal = viewInvoice ? calculateSubtotal(viewInvoice.services) : 0;
     const viewInvoiceDiscount = viewInvoice
@@ -202,15 +421,7 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                                                     <Eye size={18} />
                                                 </Button>
                                                 <Button
-                                                    onClick={() => {
-                                                        loadInvoice(invoice);
-                                                        if (onNavigateToInvoice) {
-                                                            onNavigateToInvoice();
-                                                        } else {
-                                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                            setInfoModal('فاکتور برای ویرایش بارگذاری شد. به بخش فاکتور جدید بروید.');
-                                                        }
-                                                    }}
+                                                    onClick={() => handleOpenEdit(invoice)}
                                                     title="ویرایش"
                                                     type="button"
                                                     variant="ghost"
@@ -264,22 +475,14 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                         <Button variant="secondary" onClick={() => setViewInvoice(null)}>
                             بستن
                         </Button>
-                        <Button
-                            variant="primary"
-                            onClick={() => {
-                                if (!viewInvoice) return;
-                                loadInvoice(viewInvoice);
-                                setViewInvoice(null);
-                                if (onNavigateToInvoice) {
-                                    onNavigateToInvoice();
-                                } else {
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    setInfoModal('فاکتور برای ویرایش بارگذاری شد. به بخش فاکتور جدید بروید.');
-                                }
-                            }}
-                        >
-                            ویرایش فاکتور
-                        </Button>
+                        {viewInvoice && (
+                            <Button
+                                variant="primary"
+                                onClick={() => handleOpenEdit(viewInvoice)}
+                            >
+                                ویرایش فاکتور
+                            </Button>
+                        )}
                     </>
                 }
             >
@@ -446,6 +649,16 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
             >
                 <p className="text-sm">آیا از حذف فاکتور {invoicePendingDeletion?.number || ''} مطمئن هستید؟</p>
             </Modal>
+
+            {editStore && (
+                <EditInvoiceModal
+                    store={editStore}
+                    onClose={handleCloseEdit}
+                    onSaved={(updatedInvoice) => {
+                        handleEditedInvoice(updatedInvoice);
+                    }}
+                />
+            )}
         </>
     );
 };

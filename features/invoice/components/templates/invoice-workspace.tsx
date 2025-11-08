@@ -70,7 +70,7 @@ export const InvoiceWorkspace = () => {
 
       case 'history':
         return (
-          <InvoiceHistory onNavigateToInvoice={() => setCurrentView('invoice')} />
+          <InvoiceHistory />
         );
 
       case 'invoice':
