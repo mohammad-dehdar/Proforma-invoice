@@ -128,7 +128,10 @@ export function useInvoiceStore<T = InvoiceStoreState>(
     return useStore(store, storeSelector, equalityFn);
 }
 
-// Attach getServerSnapshot for compatibility with useSyncExternalStore in SSR scenarios
+// Attach getServerSnapshot for compatibility with useSyncExternalStore in SSR scenarios.
+// Cache the snapshot to satisfy React's expectations that the same value is returned
+// during the server render lifecycle and prevent infinite loop warnings.
+const defaultServerSnapshot = defaultInvoiceStore.getState();
 // @ts-expect-error - augmenting the store with a custom method for SSR support
-useInvoiceStore.getServerSnapshot = () => defaultInvoiceStore.getState();
+useInvoiceStore.getServerSnapshot = () => defaultServerSnapshot;
 
