@@ -1,27 +1,234 @@
 "use client";
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, Trash2, Eye } from 'lucide-react';
+import { FileText, Trash2, Eye, Pencil } from 'lucide-react';
 
 import { Button } from '@atoms';
 import { Modal } from '@molecules';
-import { deleteInvoice as deleteInvoiceRequest, fetchInvoices as fetchInvoiceList } from '@services/invoice-service';
-import { formatNumber, formatPrice, calculateSubtotal, calculateTotal } from '@/utils/formatter';
+import {
+    deleteInvoice as deleteInvoiceRequest,
+    fetchInvoices as fetchInvoiceList,
+    saveInvoice,
+    replaceInvoice,
+} from '@services/invoice-service';
+import { buildInvoicePayload } from '@features/invoice/utils/invoice-payload';
+import { InvoiceForm } from './invoice-form';
+import { DiscountTaxControls } from '../molecules/discount-tax-controls';
+import { ServiceList } from './service-list';
+import {
+    formatNumber,
+    formatPrice,
+    calculateSubtotal,
+    calculateTotal,
+    calculateDiscount,
+    calculateTax,
+} from '@/utils/formatter';
 import { Invoice } from '@/types/type';
-import { useInvoiceStore } from '@/store/use-invoice-store';
+import {
+    InvoiceStoreProvider,
+    createInvoiceStore,
+    useInvoiceStore,
+} from '@/store/use-invoice-store';
+import { validateInvoice } from '@/utils/validation';
 
-interface InvoiceHistoryProps {
-    onNavigateToInvoice?: () => void;
+const cloneInvoiceForEditing = (invoice: Invoice): Invoice => ({
+    ...invoice,
+    customer: { ...invoice.customer },
+    paymentInfo: { ...invoice.paymentInfo },
+    services: invoice.services.map((service) => ({ ...service })),
+});
+
+interface EditInvoiceModalProps {
+    store: ReturnType<typeof createInvoiceStore>;
+    onClose: () => void;
+    onSaved: (invoice: Invoice) => void;
 }
 
-export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => {
+const EditInvoiceModal = ({ store, onClose, onSaved }: EditInvoiceModalProps) => (
+    <InvoiceStoreProvider store={store}>
+        <EditInvoiceModalContent onClose={onClose} onSaved={onSaved} />
+    </InvoiceStoreProvider>
+);
+
+const EditInvoiceModalContent = ({
+    onClose,
+    onSaved,
+}: {
+    onClose: () => void;
+    onSaved: (invoice: Invoice) => void;
+}) => {
+    const router = useRouter();
+    const { invoice } = useInvoiceStore();
+    const { reset } = useInvoiceStore((state) => ({ reset: state.reset }));
+    const [isSaving, setIsSaving] = useState(false);
+    const [errorModal, setErrorModal] = useState<string | null>(null);
+    const [confirmReplaceOpen, setConfirmReplaceOpen] = useState(false);
+    const [pendingInvoiceId, setPendingInvoiceId] = useState<string | null>(null);
+    const validation = useMemo(() => validateInvoice(invoice), [invoice]);
+
+    const handleSave = async () => {
+        if (!validation.isValid) {
+            const errorMessages = validation.errors.map((e) => e.message).join('\n');
+            setErrorModal(`لطفاً خطاهای زیر را برطرف کنید:\n\n${errorMessages}`);
+            return;
+        }
+
+        setIsSaving(true);
+
+        try {
+            const payload = buildInvoicePayload(invoice);
+            const result = await saveInvoice(payload, invoice._id);
+
+            if (result.unauthorized) {
+                router.replace('/login');
+                return;
+            }
+
+            if (result.conflict) {
+                setPendingInvoiceId(result.conflictInvoiceId ?? null);
+                setConfirmReplaceOpen(true);
+                return;
+            }
+
+            window.dispatchEvent(new Event('invoice:saved'));
+            onSaved(result.invoice ?? invoice);
+        } catch (error) {
+            console.error('خطا در بروزرسانی فاکتور:', error);
+            setErrorModal('❌ خطا در بروزرسانی فاکتور! لطفاً دوباره تلاش کنید.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleConfirmReplace = async () => {
+        if (!pendingInvoiceId) return;
+        setIsSaving(true);
+        try {
+            const result = await replaceInvoice(
+                pendingInvoiceId,
+                buildInvoicePayload(invoice),
+            );
+
+            if (result.unauthorized) {
+                router.replace('/login');
+                return;
+            }
+
+            window.dispatchEvent(new Event('invoice:saved'));
+            onSaved(result.invoice ?? invoice);
+        } catch (error) {
+            console.error('خطا در بروزرسانی فاکتور:', error);
+            setErrorModal('❌ خطا در بروزرسانی فاکتور! لطفاً دوباره تلاش کنید.');
+        } finally {
+            setIsSaving(false);
+            setConfirmReplaceOpen(false);
+            setPendingInvoiceId(null);
+        }
+    };
+
+    return (
+        <>
+            <Modal
+                isOpen
+                onClose={() => {
+                    if (!isSaving) {
+                        reset();
+                        onClose();
+                    }
+                }}
+                disableClose={isSaving}
+                title={`ویرایش فاکتور ${invoice.number}`}
+                size="xl"
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={onClose} disabled={isSaving}>
+                            انصراف
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={handleSave}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
+                        </Button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    <InvoiceForm />
+                    <DiscountTaxControls />
+                    <ServiceList />
+
+                    {!validation.isValid && (
+                        <div className="bg-red-900/20 border border-red-500 rounded-lg p-3 sm:p-4">
+                            <p className="text-red-300 text-sm font-semibold mb-2">
+                                ⚠️ لطفاً موارد زیر را اصلاح کنید:
+                            </p>
+                            <ul className="text-red-200 text-xs sm:text-sm space-y-1 list-disc list-inside">
+                                {validation.errors.map((error, index) => (
+                                    <li key={index}>{error.message}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            </Modal>
+
+            <Modal
+                isOpen={confirmReplaceOpen}
+                onClose={() => setConfirmReplaceOpen(false)}
+                title="تأیید جایگزینی"
+                size="sm"
+                footer={
+                    <>
+                        <Button
+                            variant="secondary"
+                            onClick={() => setConfirmReplaceOpen(false)}
+                            disabled={isSaving}
+                        >
+                            انصراف
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={handleConfirmReplace}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'در حال بروزرسانی...' : 'جایگزینی فاکتور'}
+                        </Button>
+                    </>
+                }
+            >
+                <p className="text-sm leading-6">
+                    فاکتوری با این شماره وجود دارد. آیا می‌خواهید آن را با فاکتور فعلی جایگزین کنید؟
+                </p>
+            </Modal>
+
+            <Modal
+                isOpen={!!errorModal}
+                onClose={() => setErrorModal(null)}
+                title="خطا"
+                size="sm"
+                footer={
+                    <Button variant="primary" onClick={() => setErrorModal(null)}>
+                        متوجه شدم
+                    </Button>
+                }
+            >
+                <pre className="whitespace-pre-wrap text-sm leading-6">{errorModal || ''}</pre>
+            </Modal>
+        </>
+    );
+};
+
+export const InvoiceHistory = () => {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const { loadInvoice } = useInvoiceStore();
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<null | string>(null);
+    const [viewInvoice, setViewInvoice] = useState<Invoice | null>(null);
     const [infoModal, setInfoModal] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [editStore, setEditStore] = useState<ReturnType<typeof createInvoiceStore> | null>(null);
     const router = useRouter();
 
     const loadInvoices = useCallback(async () => {
@@ -81,9 +288,40 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
         }
     };
 
-    const selectedInvoice = confirmDeleteOpen
+    const invoicePendingDeletion = confirmDeleteOpen
         ? invoices.find((inv) => inv._id === confirmDeleteOpen)
         : null;
+
+    const handleOpenEdit = (invoice: Invoice) => {
+        const cloned = cloneInvoiceForEditing(invoice);
+        setEditStore(
+            createInvoiceStore({ initialInvoice: cloned, persistState: false }),
+        );
+        setViewInvoice(null);
+    };
+
+    const handleCloseEdit = () => {
+        setEditStore(null);
+    };
+
+    const handleEditedInvoice = (updatedInvoice: Invoice) => {
+        setInvoices((prev) =>
+            prev.map((inv) => (inv._id === updatedInvoice._id ? updatedInvoice : inv)),
+        );
+        setInfoModal('فاکتور با موفقیت بروزرسانی شد.');
+        handleCloseEdit();
+    };
+
+    const viewInvoiceSubtotal = viewInvoice ? calculateSubtotal(viewInvoice.services) : 0;
+    const viewInvoiceDiscount = viewInvoice
+        ? calculateDiscount(viewInvoiceSubtotal, viewInvoice.discount ?? 0)
+        : 0;
+    const viewInvoiceTax = viewInvoice
+        ? calculateTax(viewInvoiceSubtotal - viewInvoiceDiscount, viewInvoice.tax ?? 0)
+        : 0;
+    const viewInvoiceTotal = viewInvoice
+        ? calculateTotal(viewInvoiceSubtotal, viewInvoice.discount ?? 0, viewInvoice.tax ?? 0)
+        : 0;
 
     return (
         <>
@@ -173,22 +411,24 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                                         </div>
                                             <div className="flex gap-2 sm:mr-4 shrink-0 self-start sm:self-center">
                                                 <Button
-                                                    onClick={() => {
-                                                        loadInvoice(invoice);
-                                                        if (onNavigateToInvoice) {
-                                                            onNavigateToInvoice();
-                                                        } else {
-                                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                            setInfoModal('فاکتور بارگذاری شد. به بخش فاکتور جدید بروید.');
-                                                        }
-                                                    }}
-                                                    title="بارگذاری و ویرایش"
+                                                    onClick={() => setViewInvoice(invoice)}
+                                                    title="مشاهده"
                                                     type="button"
                                                     variant="ghost"
                                                     color="blue"
                                                     size="sm"
                                                 >
                                                     <Eye size={18} />
+                                                </Button>
+                                                <Button
+                                                    onClick={() => handleOpenEdit(invoice)}
+                                                    title="ویرایش"
+                                                    type="button"
+                                                    variant="ghost"
+                                                    color="green"
+                                                    size="sm"
+                                                >
+                                                    <Pencil size={18} />
                                                 </Button>
                                                 <Button
                                                     onClick={() => invoice._id && handleDelete(invoice._id)}
@@ -224,6 +464,172 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                 <p className="text-sm">{infoModal}</p>
             </Modal>
 
+            {/* Invoice View Modal */}
+            <Modal
+                isOpen={!!viewInvoice}
+                onClose={() => setViewInvoice(null)}
+                title={viewInvoice ? `فاکتور ${viewInvoice.number}` : 'مشاهده فاکتور'}
+                size="lg"
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setViewInvoice(null)}>
+                            بستن
+                        </Button>
+                        {viewInvoice && (
+                            <Button
+                                variant="primary"
+                                onClick={() => handleOpenEdit(viewInvoice)}
+                            >
+                                ویرایش فاکتور
+                            </Button>
+                        )}
+                    </>
+                }
+            >
+                {viewInvoice && (
+                    <div className="space-y-5 text-sm sm:text-base">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-4">
+                                <p className="text-gray-400 text-xs sm:text-sm mb-1">شماره فاکتور</p>
+                                <p className="text-white text-lg font-bold break-words">{viewInvoice.number}</p>
+                            </div>
+                            <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-4">
+                                <p className="text-gray-400 text-xs sm:text-sm mb-1">تاریخ</p>
+                                <p className="text-white text-lg font-bold">{viewInvoice.date}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-4 space-y-2">
+                                <h4 className="text-white font-semibold text-base">مشخصات مشتری</h4>
+                                <div>
+                                    <p className="text-gray-400 text-xs sm:text-sm mb-1">نام</p>
+                                    <p className="text-white font-medium break-words">{viewInvoice.customer.name}</p>
+                                </div>
+                                {viewInvoice.customer.company && (
+                                    <div>
+                                        <p className="text-gray-400 text-xs sm:text-sm mb-1">شرکت</p>
+                                        <p className="text-gray-100 break-words">{viewInvoice.customer.company}</p>
+                                    </div>
+                                )}
+                                {viewInvoice.customer.phone && (
+                                    <div>
+                                        <p className="text-gray-400 text-xs sm:text-sm mb-1">تلفن</p>
+                                        <p className="text-gray-100">{viewInvoice.customer.phone}</p>
+                                    </div>
+                                )}
+                                {viewInvoice.customer.address && (
+                                    <div>
+                                        <p className="text-gray-400 text-xs sm:text-sm mb-1">آدرس</p>
+                                        <p className="text-gray-100 leading-relaxed break-words">
+                                            {viewInvoice.customer.address}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-4 space-y-2">
+                                <h4 className="text-white font-semibold text-base">اطلاعات پرداخت</h4>
+                                <div>
+                                    <p className="text-gray-400 text-xs sm:text-sm mb-1">شماره کارت</p>
+                                    <p className="text-gray-100 font-mono break-words">{viewInvoice.paymentInfo.cardNumber}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-400 text-xs sm:text-sm mb-1">صاحب کارت</p>
+                                    <p className="text-gray-100 break-words">
+                                        {viewInvoice.paymentInfo.cardHolderName}
+                                    </p>
+                                </div>
+                                {viewInvoice.paymentInfo.bankName && (
+                                    <div>
+                                        <p className="text-gray-400 text-xs sm:text-sm mb-1">نام بانک</p>
+                                        <p className="text-gray-100 break-words">{viewInvoice.paymentInfo.bankName}</p>
+                                    </div>
+                                )}
+                                {viewInvoice.paymentInfo.iban && (
+                                    <div>
+                                        <p className="text-gray-400 text-xs sm:text-sm mb-1">شماره شبا</p>
+                                        <p className="text-gray-100 font-mono break-all">{viewInvoice.paymentInfo.iban}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 className="text-white font-semibold text-base mb-3">خدمات</h4>
+                            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                                {viewInvoice.services.map((service, index) => (
+                                    <div
+                                        key={`${service.id}-${index}`}
+                                        className="bg-gray-900/30 border border-gray-700 rounded-lg p-3 sm:p-4"
+                                    >
+                                        <div className="flex justify-between items-center text-xs sm:text-sm text-gray-400 mb-2">
+                                            <span>ردیف {formatNumber(index + 1)}</span>
+                                            <span>تعداد: {formatNumber(service.quantity)}</span>
+                                        </div>
+                                        <p className="text-white font-medium mb-1 break-words">{service.description}</p>
+                                        {service.additionalDescription && (
+                                            <p className="text-gray-300 text-xs sm:text-sm mb-2 break-words">
+                                                {service.additionalDescription}
+                                            </p>
+                                        )}
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-sm">
+                                            <span className="text-gray-300">
+                                                قیمت واحد: {formatPrice(service.price)} تومان
+                                            </span>
+                                            <span className="text-green-400 font-semibold">
+                                                مبلغ کل: {formatPrice(service.price * service.quantity)} تومان
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                                {viewInvoice.services.length === 0 && (
+                                    <div className="text-gray-300 text-sm">خدمتی ثبت نشده است.</div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-4 space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-300">جمع خدمات</span>
+                                    <span className="text-white font-semibold">
+                                        {formatPrice(viewInvoiceSubtotal)} تومان
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-300">تخفیف ({formatNumber(viewInvoice.discount ?? 0)}%)</span>
+                                    <span className="text-orange-400 font-semibold">
+                                        {formatPrice(viewInvoiceDiscount)} تومان
+                                    </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-300">مالیات ({formatNumber(viewInvoice.tax ?? 0)}%)</span>
+                                    <span className="text-yellow-400 font-semibold">
+                                        {formatPrice(viewInvoiceTax)} تومان
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-4 flex flex-col justify-between">
+                                <span className="text-gray-300 text-sm">مبلغ نهایی</span>
+                                <span className="text-2xl font-bold text-green-400">
+                                    {formatPrice(viewInvoiceTotal)} تومان
+                                </span>
+                            </div>
+                        </div>
+
+                        {viewInvoice.notes && (
+                            <div className="bg-gray-900/40 border border-gray-700 rounded-lg p-4">
+                                <p className="text-gray-400 text-xs sm:text-sm mb-2">توضیحات</p>
+                                <p className="text-gray-100 leading-relaxed whitespace-pre-wrap">
+                                    {viewInvoice.notes}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </Modal>
+
             {/* Confirm Delete Modal */}
             <Modal
                 isOpen={!!confirmDeleteOpen}
@@ -241,8 +647,18 @@ export const InvoiceHistory = ({ onNavigateToInvoice }: InvoiceHistoryProps) => 
                     </>
                 }
             >
-                <p className="text-sm">آیا از حذف فاکتور {selectedInvoice?.number || ''} مطمئن هستید؟</p>
+                <p className="text-sm">آیا از حذف فاکتور {invoicePendingDeletion?.number || ''} مطمئن هستید؟</p>
             </Modal>
+
+            {editStore && (
+                <EditInvoiceModal
+                    store={editStore}
+                    onClose={handleCloseEdit}
+                    onSaved={(updatedInvoice) => {
+                        handleEditedInvoice(updatedInvoice);
+                    }}
+                />
+            )}
         </>
     );
 };
